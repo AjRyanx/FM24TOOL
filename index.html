@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FM24 Tactical Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Cascadia Code', 'monospace'],
+          },
+          colors: {
+            backdrop: '#000000',
+            surface: '#0A0A0A',
+            'surface-hover': '#1A1A1A',
+            border: '#1F1F1F',
+            'text-primary': '#FFFFFF',
+            'text-secondary': '#CCCCCC',
+            'text-muted': '#666666',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-backdrop text-white font-mono antialiased h-screen overflow-hidden flex flex-col">
+  <!-- Mode Overlay -->
+  <div id="mode-overlay">
+    <h1>FM24 Tactical Suite</h1>
+    <div>
+      <button class="mode-btn" id="mode-normal">FM Normal</button>
+      <button class="mode-btn mode-dof" id="mode-dof">DOF Mode</button>
+    </div>
+  </div>
+
+  <!-- DOF Import Overlay -->
+  <div id="dof-import-overlay" class="hidden">
+    <div id="dof-import-box">
+      <h2>DOF Mode &mdash; Import Data</h2>
+      <p class="text-xs text-text-muted mb-4">Upload your squad and staff exports to begin. Market is optional.</p>
+
+      <div class="import-row" id="import-squad-row">
+        <div class="import-label">Squad Export <span class="text-red-400">*</span></div>
+        <div class="import-zone" id="import-squad-zone">
+          <input type="file" accept=".html,.htm" class="import-file-input">
+          <span class="import-placeholder">Drop file or click to upload</span>
+          <span class="import-filename hidden"></span>
+          <span class="import-check hidden">&#10003;</span>
+          <div class="import-progress hidden"><div class="import-progress-bar" id="import-squad-progress"></div></div>
+        </div>
+      </div>
+
+      <div class="import-row" id="import-staff-row">
+        <div class="import-label">Staff Export <span class="text-red-400">*</span></div>
+        <div class="import-zone" id="import-staff-zone">
+          <input type="file" accept=".html,.htm" class="import-file-input">
+          <span class="import-placeholder">Drop file or click to upload</span>
+          <span class="import-filename hidden"></span>
+          <span class="import-check hidden">&#10003;</span>
+          <div class="import-progress hidden"><div class="import-progress-bar" id="import-staff-progress"></div></div>
+        </div>
+      </div>
+
+      <div class="import-row" id="import-market-row">
+        <div class="import-label">Market Export</div>
+        <div class="import-zone" id="import-market-zone">
+          <input type="file" accept=".html,.htm" class="import-file-input">
+          <span class="import-placeholder">Drop file or click to upload</span>
+          <span class="import-filename hidden"></span>
+          <span class="import-check hidden">&#10003;</span>
+          <div class="import-progress hidden"><div class="import-progress-bar" id="import-market-progress"></div></div>
+        </div>
+      </div>
+
+      <button id="import-continue-btn" class="import-continue-btn" disabled>Continue</button>
+    </div>
+  </div>
+
+  <!-- Manager Profile Modal -->
+  <div id="manager-profile-modal" class="hidden">
+    <div id="manager-profile-box">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Manager Profile</h3>
+        <button id="profile-close-btn" class="text-xs text-text-muted hover:text-white transition-colors">[X]</button>
+      </div>
+      <div id="profile-content"></div>
+    </div>
+  </div>
+
+  <nav class="flex-none flex border-b border-border bg-surface">
+    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent active-tab" data-tab="tactic" data-mode="all">
+      Tactic Builder <span id="tactic-badge" class="text-text-muted ml-1">0/11</span>
+    </button>
+    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="squad" data-mode="all">
+      Squad Depth
+    </button>
+    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="market" data-mode="all">
+      Market Search
+    </button>
+    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="wonderkid" data-mode="all">
+      Wonderkids <span id="wonderkid-badge" class="text-text-muted ml-1"></span>
+    </button>
+    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="manager" data-mode="dof">
+      Manager <span id="manager-badge" class="text-text-muted ml-1"></span>
+    </button>
+    <div id="nav-mode" class="flex-none flex items-center gap-2 px-3 border-l border-border ml-auto">
+      <span id="mode-label" class="text-xs text-text-muted uppercase tracking-wider">Normal</span>
+      <button id="btn-switch-mode" class="text-xs text-text-muted hover:text-white uppercase tracking-wider transition-colors" title="Switch mode">Switch</button>
+    </div>
+  </nav>
+
+  <!-- Save Bar -->
+  <div id="save-bar" class="hidden">
+    <div class="flex gap-2">
+      <button class="save-btn" id="btn-new-game">New</button>
+      <button class="save-btn" id="btn-save">Save</button>
+      <button class="save-btn" id="btn-load">Load</button>
+    </div>
+    <div class="flex items-center">
+      <span id="save-name-display" class="text-text-muted text-xs">Unsaved</span>
+    </div>
+  </div>
+
+  <!-- Load Modal -->
+  <div id="load-modal">
+    <div class="load-modal-box">
+      <h3>Load Save</h3>
+      <div id="load-list"></div>
+      <button id="load-modal-close">Close</button>
+    </div>
+  </div>
+
+  <main id="app-content" class="flex-1 overflow-y-auto">
+    <!-- Tactic Builder -->
+    <div id="panel-tactic" class="tab-panel active">
+      <div id="tactic-container" class="flex flex-1 min-h-0">
+        <div id="tactic-sidebar"></div>
+        <div id="tactic-main"></div>
+      </div>
+    </div>
+
+    <!-- Squad Depth -->
+    <div id="panel-squad" class="tab-panel p-4 md:p-6 max-w-5xl mx-auto overflow-y-auto">
+      <h2 class="text-sm font-bold tracking-wider uppercase text-white mb-4">Squad Depth</h2>
+      <div id="depth-upload"></div>
+      <div id="depth-content"></div>
+    </div>
+
+    <!-- Market Search -->
+    <div id="panel-market" class="tab-panel p-4 md:p-6 overflow-y-auto">
+      <h2 class="max-w-5xl mx-auto text-sm font-bold tracking-wider uppercase text-white mb-4">Market Search</h2>
+      <div id="market-content">
+        <div id="market-upload" class="max-w-5xl mx-auto"></div>
+        <div id="market-players"></div>
+      </div>
+      <div id="locked-market" class="hidden fixed inset-0 z-10 bg-backdrop/90 flex items-center justify-center pointer-events-none">
+        <p class="text-text-muted text-sm">Build your tactic first</p>
+      </div>
+    </div>
+
+    <!-- Wonderkid Scout -->
+    <div id="panel-wonderkid" class="tab-panel p-4 md:p-6 overflow-y-auto">
+      <h2 class="max-w-6xl mx-auto text-sm font-bold tracking-wider uppercase text-white mb-4">Wonderkid Scout</h2>
+      <div id="wonderkid-upload" class="max-w-6xl mx-auto"></div>
+      <div id="wonderkid-content" class="max-w-6xl mx-auto"></div>
+    </div>
+
+    <!-- Manager -->
+    <div id="panel-manager" class="tab-panel p-4 md:p-6 overflow-y-auto">
+      <div id="manager-content"></div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+  </main>
+
+  <script src="data/roles.js"></script>
+  <script src="data/tactic-schema.js"></script>
+  <script src="data/instruction-weights.js"></script>
+  <script src="data/role-profiles.js"></script>
+  <script src="modules/squad.js"></script>
+  <script src="modules/tactic.js"></script>
+  <script src="modules/market.js"></script>
+  <script src="modules/eval.js"></script>
+  <script src="modules/ui.js"></script>
+  <script src="data/relationship-pairings.js"></script>
+  <script src="data/cb-combos.js"></script>
+  <script src="data/midfield-combos.js"></script>
+  <script src="data/zone-grid.js"></script>
+  <script src="data/pairing-rules.js"></script>
+  <script src="modules/pairingEngine.js"></script>
+  <script src="modules/structureValidator.js"></script>
+  <script src="modules/autofixEngine.js"></script>
+  <script src="modules/zoneCollisionDetector.js"></script>
+  <script src="modules/archetypeScorer.js"></script>
+  <script src="modules/globalAggregator.js"></script>
+  <script src="modules/tacticValidator.js"></script>
+  <script src="modules/wonderkid.js"></script>
+  <script src="data/manager-engine.js"></script>
+  <script src="modules/managerEval.js"></script>
+  <script src="modules/manager.js"></script>
+  <script src="modules/save.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

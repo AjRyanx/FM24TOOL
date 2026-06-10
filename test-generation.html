@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FM24 Tactic Generation Test</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { darkMode: 'class', theme: { extend: { colors: { surface: '#1e1e2e', 'surface-alt': '#181825', border: '#313244', 'text-primary': '#cdd6f4', 'text-secondary': '#bac2de', 'text-muted': '#6c7086', accent: '#89b4fa', 'accent-hover': '#74c7ec', success: '#a6e3a1', warning: '#f9e2af', error: '#f38ba8' } } } };
+</script>
+<style>
+body { font-family: 'JetBrains Mono', monospace; background: #11111b; color: #cdd6f4; padding: 20px; }
+pre { white-space: pre-wrap; font-size: 11px; line-height: 1.4; }
+.res-card { background: #1e1e2e; border: 1px solid #313244; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.res-card.pass { border-color: #a6e3a1; }
+.res-card.fail { border-color: #f38ba8; }
+.res-card.warn { border-color: #f9e2af; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.badge-pass { background: #1e3a2e; color: #a6e3a1; }
+.badge-fail { background: #3a1e1e; color: #f38ba8; }
+.badge-warn { background: #3a3520; color: #f9e2af; }
+.progress-bar { height: 4px; background: #313244; border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: #89b4fa; transition: width 0.3s; }
+</style>
+</head>
+<body>
+<h1 class="text-xl font-bold mb-2">FM24 Tactic Generation Test</h1>
+<p class="text-text-muted text-xs mb-4" id="status">Initialising...</p>
+<div class="progress-bar mb-4"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+<div id="summary" class="mb-4 text-xs"></div>
+<div id="results"></div>
+
+<script src="data/roles.js"></script>
+<script src="data/tactic-schema.js"></script>
+<script src="data/instruction-weights.js"></script>
+<script src="data/role-profiles.js"></script>
+<script src="modules/squad.js"></script>
+<script src="modules/tactic.js"></script>
+<script src="modules/market.js"></script>
+<script src="modules/eval.js"></script>
+<script src="modules/ui.js"></script>
+<script src="data/relationship-pairings.js"></script>
+<script src="data/cb-combos.js"></script>
+<script src="data/midfield-combos.js"></script>
+<script src="data/zone-grid.js"></script>
+<script src="data/pairing-rules.js"></script>
+<script src="modules/pairingEngine.js"></script>
+<script src="modules/structureValidator.js"></script>
+<script src="modules/autofixEngine.js"></script>
+<script src="modules/zoneCollisionDetector.js"></script>
+<script src="modules/archetypeScorer.js"></script>
+<script src="modules/globalAggregator.js"></script>
+<script src="modules/tacticValidator.js"></script>
+<script src="modules/wonderkid.js"></script>
+<script src="data/manager-engine.js"></script>
+<script src="modules/managerEval.js"></script>
+<script src="modules/manager.js"></script>
+<script src="modules/save.js"></script>
+<script src="app.js"></script>
+
+<script>
+(function() {
+  var MAX_MANAGERS = 30;
+  var allResults = [];
+  var statusEl = document.getElementById('status');
+  var progressEl = document.getElementById('progress');
+  var summaryEl = document.getElementById('summary');
+  var resultsEl = document.getElementById('results');
+
+  function setStatus(msg) { statusEl.textContent = msg; }
+
+  function updateProgress(pct) { progressEl.style.width = pct + '%'; }
+
+  function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  function getManagerSummary(mgr) {
+    return mgr.Name + ' (CA:' + (mgr.CA||'?') + ', Phil:' + (mgr._philosophy||'?') + ', Form:' + (mgr._formation||'?') + ')';
+  }
+
+  function runValidatorOnTactic(tactic) {
+    var results = {};
+    try {
+      if (typeof global.evaluatePairings === 'function') {
+        var p = global.evaluatePairings(tactic.slots, tactic.instructions || {});
+        results.pairingViolations = (p && p.violations) ? p.violations.filter(function(v) { return v.severity !== 'GOOD'; }) : [];
+        results.pairingScore = p ? p.score : null;
+      }
+    } catch(e) { results.pairingError = e.message; }
+
+    try {
+      if (typeof global.runStructuralValidators === 'function') {
+        var s = global.runStructuralValidators(tactic.slots, tactic.instructions || {});
+        results.structuralScore = s.score;
+        results.structuralViolations = s.violations || [];
+      }
+    } catch(e) { results.structuralError = e.message; }
+
+    try {
+      if (typeof global.detectZoneCollisions === 'function') {
+        var z = global.detectZoneCollisions(tactic.slots, tactic.instructions || {});
+        results.zoneViolations = (z && z.violations) ? z.violations : [];
+        results.zoneScore = z ? z.score : null;
+      }
+    } catch(e) { results.zoneError = e.message; }
+
+    try {
+      if (typeof global.scoreArchetypeCompliance === 'function') {
+        var a = global.scoreArchetypeCompliance(tactic.slots, tactic.instructions, tactic.philosophy);
+        results.archetypeViolations = (a && a.violations) ? a.violations : [];
+        results.archetypeScore = a ? a.score : null;
+      }
+    } catch(e) { results.archetypeError = e.message; }
+
+    return results;
+  }
+
+  function computeGlobalScore(vResults) {
+    var pairingW = 0.35, structW = 0.40, zoneW = 0.20, archW = 0.05;
+    var pScore = vResults.pairingScore !== null ? vResults.pairingScore : 1;
+    var sScore = vResults.structuralScore !== null ? vResults.structuralScore : 1;
+    var zScore = vResults.zoneScore !== null ? vResults.zoneScore : 1;
+    var aScore = vResults.archetypeScore !== null ? vResults.archetypeScore : 1;
+    return pScore * pairingW + sScore * structW + zScore * zoneW + aScore * archW;
+  }
+
+  function formatName(str) {
+    if (!str) return '';
+    return str.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+  }
+
+  async function run() {
+    setStatus('Fetching staff.html...');
+    var resp;
+    try {
+      resp = await fetch('staff.html');
+    } catch(e) {
+      setStatus('ERROR: Could not fetch staff.html. Make sure test-generation.html is in the fm24-tool directory and served via a local server (e.g. "npx serve ." or Python http.server).');
+      return;
+    }
+    var html = await resp.text();
+
+    setStatus('Parsing staff data (' + html.length + ' bytes)...');
+    var staff = await parseStaffHTML(html);
+    var eligible = filterEligibleManagers(staff);
+    setStatus('Loaded ' + staff.length + ' staff, ' + eligible.length + ' eligible managers.');
+
+    var testSet = eligible.slice(0, MAX_MANAGERS);
+    if (testSet.length === 0) {
+      setStatus('ERROR: No eligible managers found. Check staff.html format.');
+      return;
+    }
+
+    setStatus('Generating tactics for ' + testSet.length + ' managers...');
+
+    for (var i = 0; i < testSet.length; i++) {
+      var mgr = testSet[i];
+      setStatus('[' + (i+1) + '/' + testSet.length + '] ' + getManagerSummary(mgr));
+      updateProgress(((i) / testSet.length) * 100);
+
+      var result = {
+        manager: { Name: mgr.Name, CA: mgr.CA, Att: mgr.Att, Tec: mgr.Tec, Dis: mgr.Dis,
+                   PressingStyle: mgr['Pressing Style'], PlayingMentality: mgr['Playing Mentality'],
+                   PreferredFormation: mgr['Preferred Formation'] },
+        tactic: null,
+        preAutofix: null,
+        postAutofix: null,
+        autofixFixes: [],
+        errors: []
+      };
+
+      // Generate
+      try {
+        var tactic = generateTacticFromManager(mgr, []);
+        if (!tactic) { result.errors.push('generateTacticFromManager returned null'); continue; }
+        result.tactic = {
+          formation: tactic.formation,
+          instructions: tactic.instructions,
+          philosophy: tactic.philosophy,
+          slots: {}
+        };
+        Object.keys(tactic.slots || {}).forEach(function(sid) {
+          var s = tactic.slots[sid];
+          result.tactic.slots[sid] = { roleId: s.roleId, duty: s.duty };
+        });
+        mgr._philosophy = tactic.philosophy;
+        mgr._formation = tactic.formation;
+      } catch(e) { result.errors.push('Generation error: ' + e.message); continue; }
+
+      // Pre-autofix validation
+      try {
+        result.preAutofix = runValidatorOnTactic(tactic);
+      } catch(e) { result.errors.push('Pre-autofix validation error: ' + e.message); }
+
+      // Autofix
+      try {
+        if (typeof global.autofixTactic === 'function') {
+          var fixResult = global.autofixTactic(tactic.slots, tactic.instructions || {}, 8, tactic.philosophy);
+          result.autofixFixes = fixResult.fixes || [];
+          // Apply fixes
+          if (fixResult.slots) tactic.slots = fixResult.slots;
+          if (fixResult.instructions) tactic.instructions = fixResult.instructions;
+        }
+      } catch(e) { result.errors.push('Autofix error: ' + e.message); }
+
+      // Post-autofix validation
+      try {
+        result.postAutofix = runValidatorOnTactic(tactic);
+      } catch(e) { result.errors.push('Post-autofix validation error: ' + e.message); }
+
+      if (result.preAutofix && result.postAutofix) {
+        result.preGlobalScore = computeGlobalScore(result.preAutofix);
+        result.postGlobalScore = computeGlobalScore(result.postAutofix);
+        result.scoreDelta = (result.postGlobalScore - result.preGlobalScore).toFixed(3);
+      }
+
+      allResults.push(result);
+
+      // Yield to let UI update
+      await sleep(10);
+    }
+
+    updateProgress(100);
+    renderResults();
+    setStatus('Done — tested ' + testSet.length + ' managers. Results below.');
+  }
+
+  function severityWeight(s) {
+    if (s === 'CRITICAL') return 25;
+    if (s === 'ERROR') return 15;
+    if (s === 'WARNING') return 8;
+    if (s === 'SUGGESTION') return 2;
+    return 1;
+  }
+
+  function renderResults() {
+    var html = '';
+    var severeCount = 0, warnCount = 0, cleanCount = 0;
+    var totalFixes = 0;
+    var scoreTotal = 0;
+
+    allResults.forEach(function(r, idx) {
+      var preScore = r.preGlobalScore !== undefined ? r.preGlobalScore.toFixed(2) : '?';
+      var postScore = r.postGlobalScore !== undefined ? r.postGlobalScore.toFixed(2) : '?';
+      scoreTotal += r.postGlobalScore || 0;
+
+      var totalViolations = 0;
+      var severeVios = 0;
+      if (r.postAutofix) {
+        ['pairingViolations','structuralViolations','zoneViolations','archetypeViolations'].forEach(function(k) {
+          var v = r.postAutofix[k] || [];
+          totalViolations += v.length;
+          v.forEach(function(vv) {
+            if (vv.severity === 'CRITICAL' || vv.severity === 'ERROR') severeVios++;
+          });
+        });
+      }
+
+      if (r.errors.length > 0) severeCount++;
+      else if (severeVios > 0) severeCount++;
+      else if (totalViolations > 0) warnCount++;
+      else cleanCount++;
+
+      totalFixes += (r.autofixFixes || []).length;
+
+      var badge = cleanCount > 0 && severeVios === 0 && totalViolations === 0 ? 'pass' : (severeVios > 0 ? 'fail' : 'warn');
+      var badgeClass = badge === 'pass' ? 'badge-pass' : (badge === 'fail' ? 'badge-fail' : 'badge-warn');
+      var badgeLabel = badge === 'pass' ? 'CLEAN' : (badge === 'fail' ? 'ISSUES' : 'WARN');
+
+      html += '<div class="res-card ' + badge + '">';
+      html += '<div class="flex justify-between items-start mb-1">';
+      html += '<div><span class="badge ' + badgeClass + ' mr-2">' + badgeLabel + '</span>';
+      html += '<strong>' + formatName(r.manager.Name) + '</strong>';
+      html += ' <span class="text-text-muted">(CA:' + (r.manager.CA||'?') + ')</span></div>';
+      html += '<div class="text-xs text-right">';
+      html += 'Pre: ' + preScore + ' → Post: ' + postScore;
+      if (r.scoreDelta) html += ' <span class="' + (parseFloat(r.scoreDelta) >= 0 ? 'text-success' : 'text-error') + '">(' + r.scoreDelta + ')</span>';
+      html += '</div></div>';
+
+      html += '<div class="text-xs text-text-muted mb-1">';
+      html += 'Formation: ' + (r.tactic ? r.tactic.formation : '?') + ' | ';
+      html += 'Philosophy: ' + (r.tactic ? r.tactic.philosophy : '?') + ' | ';
+      html += 'Mentality: ' + (r.manager.PlayingMentality||'?');
+      html += '</div>';
+
+      // Slot summary
+      if (r.tactic && r.tactic.slots) {
+        var slots = r.tactic.slots;
+        var roleList = Object.keys(slots).sort().map(function(sid) {
+          var s = slots[sid];
+          var abbr = '?';
+          var role = getRoleById(s.roleId);
+          if (role) abbr = role.abbreviation;
+          return sid + '=' + abbr + '-' + (s.duty||'?').charAt(0);
+        }).join('  ');
+        html += '<div class="text-xs text-text-secondary mb-1">' + roleList + '</div>';
+      }
+
+      // Violations
+      if (r.postAutofix) {
+        var vioCount = 0;
+        ['pairingViolations','structuralViolations','zoneViolations','archetypeViolations'].forEach(function(k) {
+          var v = r.postAutofix[k] || [];
+          v.forEach(function(vv) {
+            if (vioCount < 5) {
+              html += '<div class="text-xs ' + (vv.severity === 'CRITICAL'||vv.severity==='ERROR' ? 'text-error' : 'text-warning') + '">';
+              html += '  [' + vv.severity + '] ' + vv.id + ': ' + (vv.description || '').substring(0, 80);
+              html += '</div>';
+              vioCount++;
+            }
+          });
+        });
+        if (vioCount >= 5) html += '<div class="text-xs text-text-muted">... and ' + (totalViolations - 5) + ' more violations</div>';
+      }
+
+      // Fixes
+      if (r.autofixFixes && r.autofixFixes.length > 0) {
+        html += '<div class="text-xs text-success mt-1">';
+        r.autofixFixes.forEach(function(f) {
+          html += '  ✓ [' + f.id + '] ' + (f.applied || '').substring(0, 60) + '<br>';
+        });
+        html += '</div>';
+      }
+
+      if (r.errors.length > 0) {
+        html += '<div class="text-xs text-error mt-1">';
+        r.errors.forEach(function(e) { html += '  ✗ ' + e + '<br>'; });
+        html += '</div>';
+      }
+
+      html += '</div>';
+    });
+
+    // Summary section
+    var avgScore = allResults.length > 0 ? (scoreTotal / allResults.length).toFixed(2) : '?';
+    var summaryHtml = '<div class="flex gap-4 text-xs">';
+    summaryHtml += '<div><span class="badge badge-pass">' + cleanCount + '</span> Clean</div>';
+    summaryHtml += '<div><span class="badge badge-warn">' + warnCount + '</span> Warnings</div>';
+    summaryHtml += '<div><span class="badge badge-fail">' + severeCount + '</span> Issues</div>';
+    summaryHtml += '<div>Avg Post Score: <strong>' + avgScore + '</strong></div>';
+    summaryHtml += '<div>Total Fixes Applied: <strong>' + totalFixes + '</strong></div>';
+    summaryHtml += '<div><button id="download-btn" class="underline text-accent hover:text-accent-hover">Download JSON</button></div>';
+    summaryHtml += '</div>';
+    summaryEl.innerHTML = summaryHtml;
+
+    resultsEl.innerHTML = html;
+
+    document.getElementById('download-btn').addEventListener('click', function() {
+      var data = JSON.stringify(allResults, null, 2);
+      var blob = new Blob([data], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'tactic-generation-test-results.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Wait for scripts to load, then run
+  if (document.readyState === 'complete') {
+    setTimeout(run, 500);
+  } else {
+    window.addEventListener('load', function() { setTimeout(run, 500); });
+  }
+})();
+</script>
+</body>
+</html>
