@@ -45,7 +45,7 @@
           "duty": "Attack"
         },
         "AML": {
-          "roleId": "IF_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DR": {
@@ -53,27 +53,27 @@
           "duty": "Attack"
         },
         "AMR": {
-          "roleId": "IW_A",
+          "roleId": "IF_A",
           "duty": "Attack"
         },
         "DMC": {
-          "roleId": "DLP_S",
-          "duty": "Support"
+          "roleId": "DLP_D",
+          "duty": "Defend"
         },
         "MCL": {
           "roleId": "AP_S",
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "CM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "DCL": {
           "roleId": "BPD_CO",
           "duty": "Cover"
         },
         "DCR": {
-          "roleId": "CD_D",
+          "roleId": "BPD_D",
           "duty": "Defend"
         },
         "GK": {
@@ -88,7 +88,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7683333333333333,
+      "pairingScore": 0.7466666666666666,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
@@ -101,29 +101,24 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9189166666666666
+      "globalScore": 0.9113333333333333
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7566666666666666,
+      "pairingScore": 0.7516666666666666,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9148333333333334
+      "globalScore": 0.9130833333333332
     },
     "autofixFixes": [
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed HB_D to DLP_S"
-      },
-      {
-        "id": "L4_POSSESSION_PLAYMAKERS",
-        "layer": "4",
-        "applied": "Added playmaker: changed BBM_S to AP_S"
+        "applied": "Added playmaker: changed BWM_CM_S to AP_S"
       }
     ],
     "errors": []
@@ -143,7 +138,7 @@
       "formation": "4-4-2",
       "philosophy": "aggressive high-press tactician",
       "instructions": {
-        "mentality": "Balanced",
+        "mentality": "Positive",
         "attackingWidth": "Fairly Wide",
         "tempo": "Much Higher",
         "passIntoSpace": true,
@@ -151,7 +146,7 @@
         "playOutOfDefence": true,
         "creativeFreedom": "More Expressive",
         "lineOfEngagement": "High",
-        "defensiveLine": "Higher",
+        "defensiveLine": "Standard",
         "triggerPress": "Much More Often",
         "whenPossessionLost": "Counter-Press",
         "whenPossessionWon": "Counter",
@@ -168,44 +163,44 @@
       },
       "slots": {
         "DL": {
-          "roleId": "FB_A",
+          "roleId": "WB_A",
           "duty": "Attack"
         },
         "ML": {
-          "roleId": "DW_S",
-          "duty": "Support"
-        },
-        "DR": {
-          "roleId": "FB_A",
+          "roleId": "Winger_WM_A",
           "duty": "Attack"
         },
-        "MR": {
-          "roleId": "Winger_WM_S",
+        "DR": {
+          "roleId": "FB_S",
           "duty": "Support"
         },
+        "MR": {
+          "roleId": "IW_WM_A",
+          "duty": "Attack"
+        },
         "STCL": {
-          "roleId": "PF_A",
+          "roleId": "CF_A",
           "duty": "Attack"
         },
         "STCR": {
-          "roleId": "AF_A",
+          "roleId": "Poacher_A",
           "duty": "Attack"
         },
         "MCL": {
-          "roleId": "RPM_CM_S",
+          "roleId": "BBM_S",
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "CM_D",
+          "roleId": "DLP_CM_D",
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "BPD_D",
-          "duty": "Defend"
+          "roleId": "BPD_CO",
+          "duty": "Cover"
         },
         "DCR": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -214,28 +209,56 @@
       }
     },
     "preAutofix": {
-      "pairingViolations": [],
-      "pairingScore": 0.7163636363636363,
+      "pairingViolations": [
+        {
+          "id": "NP-22",
+          "severity": "WARNING",
+          "description": "Poacher_A depends on quick breaks from deep; a high line compresses space and risks offside.",
+          "suggestion": "Adjust defensive line or change striker role.",
+          "roleA": "Poacher_A",
+          "roleB": "DL_HIGH",
+          "slotA": "STCR",
+          "slotB": "defensive_line"
+        }
+      ],
+      "pairingScore": 0.7545454545454545,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
-      "archetypeViolations": [],
-      "archetypeScore": 100,
-      "globalScore": 0.9007272727272728
+      "archetypeViolations": [
+        {
+          "id": "L4_MIN_BOOST",
+          "severity": "WARNING",
+          "description": "Fewer than 2 archetype-boosted roles in the lineup."
+        }
+      ],
+      "archetypeScore": 90,
+      "globalScore": 0.9090909090909091
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7163636363636363,
+      "pairingScore": 0.7545454545454545,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9007272727272728
+      "globalScore": 0.9140909090909091
     },
-    "autofixFixes": [],
+    "autofixFixes": [
+      {
+        "id": "L4_MIN_BOOST",
+        "layer": "4",
+        "applied": "Boosted archetype fit: changed WM_A to IW_WM_A"
+      },
+      {
+        "id": "NP-22",
+        "layer": "P",
+        "applied": "Adjusted defensive line to 'Standard' to suit striker role Poacher_A"
+      }
+    ],
     "errors": []
   },
   {
@@ -300,8 +323,8 @@
           "duty": "Attack"
         },
         "MCL": {
-          "roleId": "CM_A",
-          "duty": "Attack"
+          "roleId": "BWM_CM_S",
+          "duty": "Support"
         },
         "MCR": {
           "roleId": "CM_D",
@@ -334,16 +357,9 @@
           "slotB": "defensive_line"
         }
       ],
-      "pairingScore": 0.733,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2B_CENTRAL_CORRIDOR",
-          "severity": "WARNING",
-          "description": "Gap between DCs spans 240 units — central corridor exposed.",
-          "suggestion": "Add a covering CB or screen with a defend-duty DM."
-        }
-      ],
+      "pairingScore": 0.7136363636363636,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -364,25 +380,20 @@
         }
       ],
       "archetypeScore": 96,
-      "globalScore": 0.8645500000000002
+      "globalScore": 0.8977727272727274
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7218181818181818,
+      "pairingScore": 0.7136363636363636,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9026363636363637
+      "globalScore": 0.8997727272727274
     },
     "autofixFixes": [
-      {
-        "id": "S2B_CENTRAL_CORRIDOR",
-        "layer": "2",
-        "applied": "Changed CD_D to CD_CO (Cover) to protect central corridor"
-      },
       {
         "id": "L4_SUPPRESSED",
         "layer": "4",
@@ -442,8 +453,8 @@
       },
       "slots": {
         "DL": {
-          "roleId": "WB_A",
-          "duty": "Attack"
+          "roleId": "WB_S",
+          "duty": "Support"
         },
         "AML": {
           "roleId": "IW_A",
@@ -462,16 +473,16 @@
           "duty": "Defend"
         },
         "MCL": {
-          "roleId": "BBM_S",
-          "duty": "Support"
-        },
-        "MCR": {
           "roleId": "AP_S",
           "duty": "Support"
         },
+        "MCR": {
+          "roleId": "CM_A",
+          "duty": "Attack"
+        },
         "DCL": {
-          "roleId": "BPD_D",
-          "duty": "Defend"
+          "roleId": "CD_CO",
+          "duty": "Cover"
         },
         "DCR": {
           "roleId": "CD_D",
@@ -511,14 +522,14 @@
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7683333333333333,
+      "pairingScore": 0.7516666666666666,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9189166666666666
+      "globalScore": 0.9130833333333332
     },
     "autofixFixes": [
       {
@@ -529,12 +540,7 @@
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed DM_D to DLP_S"
-      },
-      {
-        "id": "S2B_CENTRAL_CORRIDOR",
-        "layer": "2",
-        "applied": "Changed DLP_S to DLP_D to screen central corridor"
+        "applied": "Added playmaker: changed CM_S to AP_S"
       }
     ],
     "errors": []
@@ -581,16 +587,16 @@
       },
       "slots": {
         "DL": {
-          "roleId": "WB_A",
+          "roleId": "FB_A",
           "duty": "Attack"
         },
         "AML": {
-          "roleId": "IF_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DR": {
-          "roleId": "FB_A",
-          "duty": "Attack"
+          "roleId": "FB_S",
+          "duty": "Support"
         },
         "AMR": {
           "roleId": "Winger_A",
@@ -605,12 +611,12 @@
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "CM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "DCL": {
-          "roleId": "BPD_CO",
-          "duty": "Cover"
+          "roleId": "BPD_D",
+          "duty": "Defend"
         },
         "DCR": {
           "roleId": "BPD_D",
@@ -628,7 +634,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7649999999999999,
+      "pairingScore": 0.7529411764705882,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
@@ -646,18 +652,18 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9177500000000001
+      "globalScore": 0.9135294117647059
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.76,
+      "pairingScore": 0.758235294117647,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9159999999999999
+      "globalScore": 0.9153823529411764
     },
     "autofixFixes": [
       {
@@ -668,7 +674,7 @@
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed BBM_S to AP_S"
+        "applied": "Added playmaker: changed BWM_CM_S to AP_S"
       }
     ],
     "errors": []
@@ -688,10 +694,11 @@
       "formation": "4-4-2",
       "philosophy": "aggressive high-press tactician",
       "instructions": {
-        "mentality": "Defensive",
+        "mentality": "Positive",
         "attackingWidth": "Fairly Wide",
         "passingDirectness": "Mixed",
         "tempo": "Much Higher",
+        "passIntoSpace": true,
         "workBallIntoBox": true,
         "playOutOfDefence": true,
         "lineOfEngagement": "High",
@@ -712,19 +719,19 @@
       },
       "slots": {
         "DL": {
-          "roleId": "WB_S",
+          "roleId": "IWB_S",
           "duty": "Support"
         },
         "ML": {
-          "roleId": "Winger_WM_S",
+          "roleId": "DW_S",
           "duty": "Support"
         },
         "DR": {
-          "roleId": "FB_S",
-          "duty": "Support"
+          "roleId": "FB_A",
+          "duty": "Attack"
         },
         "MR": {
-          "roleId": "WM_S",
+          "roleId": "Winger_WM_S",
           "duty": "Support"
         },
         "STCL": {
@@ -736,11 +743,11 @@
           "duty": "Attack"
         },
         "MCL": {
-          "roleId": "RPM_CM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "MCR": {
-          "roleId": "BWM_CM_D",
+          "roleId": "DLP_CM_D",
           "duty": "Defend"
         },
         "DCL": {
@@ -759,7 +766,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.73,
+      "pairingScore": 0.719090909090909,
       "structuralScore": 0.9,
       "structuralViolations": [
         {
@@ -773,18 +780,18 @@
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.8655000000000002
+      "globalScore": 0.8616818181818182
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7,
+      "pairingScore": 0.73,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.895
+      "globalScore": 0.9055
     },
     "autofixFixes": [
       {
@@ -810,10 +817,11 @@
       "formation": "4-3-3 DM",
       "philosophy": "possession-oriented tactician",
       "instructions": {
-        "mentality": "Defensive",
+        "mentality": "Positive",
         "attackingWidth": "Fairly Wide",
         "passingDirectness": "Shorter",
         "tempo": "Normal",
+        "passIntoSpace": true,
         "workBallIntoBox": true,
         "playOutOfDefence": true,
         "creativeFreedom": "More Expressive",
@@ -826,6 +834,7 @@
         "crossEngagement": "Normal",
         "useOffsideTrap": true,
         "defensiveLineBehavior": "Standard",
+        "overlapLeft": true,
         "overlapRight": true,
         "crossType": "Whipped",
         "gkDistributionMethod": "Take Short Kicks",
@@ -834,8 +843,8 @@
       },
       "slots": {
         "DL": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "FB_A",
+          "duty": "Attack"
         },
         "AML": {
           "roleId": "IW_A",
@@ -846,23 +855,23 @@
           "duty": "Support"
         },
         "AMR": {
-          "roleId": "Winger_S",
-          "duty": "Support"
+          "roleId": "Winger_A",
+          "duty": "Attack"
         },
         "DMC": {
-          "roleId": "DLP_D",
-          "duty": "Defend"
+          "roleId": "DLP_S",
+          "duty": "Support"
         },
         "MCL": {
-          "roleId": "AP_S",
+          "roleId": "DLP_CM_S",
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "CM_A",
-          "duty": "Attack"
+          "roleId": "CM_S",
+          "duty": "Support"
         },
         "DCL": {
-          "roleId": "BPD_CO",
+          "roleId": "CD_CO",
           "duty": "Cover"
         },
         "DCR": {
@@ -881,16 +890,9 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7466666666666666,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
+      "pairingScore": 0.7366666666666666,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -906,25 +908,20 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8713333333333333
+      "globalScore": 0.9078333333333333
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.75,
+      "pairingScore": 0.7366666666666666,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9125000000000001
+      "globalScore": 0.9078333333333333
     },
     "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed FB_D to WB_S for more width"
-      },
       {
         "id": "L4_VETO",
         "layer": "4",
@@ -933,7 +930,7 @@
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed CM_S to AP_S"
+        "applied": "Added playmaker: changed DM_D to DLP_S"
       }
     ],
     "errors": []
@@ -978,19 +975,19 @@
       },
       "slots": {
         "DL": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "FB_D",
+          "duty": "Defend"
         },
         "ML": {
           "roleId": "WM_S",
           "duty": "Support"
         },
         "DR": {
-          "roleId": "NFB_D",
-          "duty": "Defend"
+          "roleId": "FB_S",
+          "duty": "Support"
         },
         "MR": {
-          "roleId": "DW_S",
+          "roleId": "Winger_WM_S",
           "duty": "Support"
         },
         "DMC": {
@@ -998,7 +995,7 @@
           "duty": "Defend"
         },
         "MCL": {
-          "roleId": "DLP_CM_S",
+          "roleId": "AP_S",
           "duty": "Support"
         },
         "MCR": {
@@ -1006,12 +1003,12 @@
           "duty": "Support"
         },
         "DCL": {
-          "roleId": "CD_D",
+          "roleId": "BPD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "GK_D",
@@ -1025,16 +1022,9 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7431249999999999,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
+      "pairingScore": 0.776875,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -1045,25 +1035,20 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8700937500000001
+      "globalScore": 0.9219062499999999
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.739375,
+      "pairingScore": 0.776875,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9087812500000001
+      "globalScore": 0.9219062499999999
     },
     "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed FB_S to WB_S for more width"
-      },
       {
         "id": "L4_DEFENSIVE_LINE",
         "layer": "4",
@@ -1114,8 +1099,8 @@
       },
       "slots": {
         "DL": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "FB_A",
+          "duty": "Attack"
         },
         "AML": {
           "roleId": "IW_A",
@@ -1130,12 +1115,12 @@
           "duty": "Attack"
         },
         "STCL": {
-          "roleId": "PF_D",
-          "duty": "Defend"
+          "roleId": "F9_S",
+          "duty": "Support"
         },
         "STCR": {
-          "roleId": "AF_A",
-          "duty": "Attack"
+          "roleId": "PF_S",
+          "duty": "Support"
         },
         "DMCL": {
           "roleId": "BWM_S",
@@ -1146,8 +1131,8 @@
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "BPD_D",
-          "duty": "Defend"
+          "roleId": "CD_CO",
+          "duty": "Cover"
         },
         "DCR": {
           "roleId": "CD_D",
@@ -1161,40 +1146,27 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7799999999999999,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
-      "zoneViolations": [],
-      "zoneScore": 1,
-      "archetypeViolations": [],
-      "archetypeScore": 100,
-      "globalScore": 0.883
-    },
-    "postAutofix": {
-      "pairingViolations": [],
-      "pairingScore": 0.7859999999999999,
+      "pairingScore": 0.7719999999999999,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9251
+      "globalScore": 0.9201999999999999
     },
-    "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed FB_S to WB_S for more width"
-      }
-    ],
+    "postAutofix": {
+      "pairingViolations": [],
+      "pairingScore": 0.7719999999999999,
+      "structuralScore": 1,
+      "structuralViolations": [],
+      "zoneViolations": [],
+      "zoneScore": 1,
+      "archetypeViolations": [],
+      "archetypeScore": 100,
+      "globalScore": 0.9201999999999999
+    },
+    "autofixFixes": [],
     "errors": []
   },
   {
@@ -1261,16 +1233,16 @@
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "WCB_S",
-          "duty": "Support"
+          "roleId": "BPD_CO",
+          "duty": "Cover"
         },
         "DC": {
           "roleId": "BPD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "BPD_CO",
-          "duty": "Cover"
+          "roleId": "WCB_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -1284,7 +1256,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7283333333333333,
+      "pairingScore": 0.73,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
@@ -1297,18 +1269,18 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9049166666666666
+      "globalScore": 0.9055
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7283333333333333,
+      "pairingScore": 0.73,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9049166666666666
+      "globalScore": 0.9055
     },
     "autofixFixes": [
       {
@@ -1359,15 +1331,15 @@
         "gkDistributionPace": "Distribute Quickly",
         "gkDistributionMethod": "Take Short Kicks",
         "gkDistributionTarget": "Central Defenders",
-        "focusPlayLeft": true
+        "focusPlayRight": true
       },
       "slots": {
         "WBL": {
-          "roleId": "CWB_S",
+          "roleId": "WB_S",
           "duty": "Support"
         },
         "AML": {
-          "roleId": "IF_A",
+          "roleId": "Winger_A",
           "duty": "Attack"
         },
         "WBR": {
@@ -1375,28 +1347,28 @@
           "duty": "Attack"
         },
         "AMR": {
-          "roleId": "IW_A",
+          "roleId": "IF_A",
           "duty": "Attack"
         },
         "DMCL": {
-          "roleId": "DM_D",
-          "duty": "Defend"
+          "roleId": "DM_S",
+          "duty": "Support"
         },
         "DMCR": {
-          "roleId": "SV_S",
-          "duty": "Support"
+          "roleId": "DLP_D",
+          "duty": "Defend"
         },
         "DCL": {
-          "roleId": "WCB_S",
-          "duty": "Support"
+          "roleId": "WCB_A",
+          "duty": "Attack"
         },
         "DC": {
-          "roleId": "BPD_D",
+          "roleId": "CD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "WCB_A",
-          "duty": "Attack"
+          "roleId": "CD_CO",
+          "duty": "Cover"
         },
         "GK": {
           "roleId": "SK_A",
@@ -1410,25 +1382,25 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7116666666666667,
+      "pairingScore": 0.745,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.8990833333333335
+      "globalScore": 0.91075
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7116666666666667,
+      "pairingScore": 0.745,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.8990833333333335
+      "globalScore": 0.91075
     },
     "autofixFixes": [],
     "errors": []
@@ -1468,21 +1440,20 @@
         "shootFromDistance": true,
         "stayOnFeet": true,
         "defensiveLineBehavior": "Step Up More",
+        "overlapLeft": true,
         "overlapRight": true,
         "crossType": "Whipped",
         "gkDistributionPace": "Distribute Quickly",
         "gkDistributionMethod": "Take Short Kicks",
-        "gkDistributionTarget": "Wide Players",
-        "focusPlayRight": true,
-        "underlapLeft": true
+        "gkDistributionTarget": "Wide Players"
       },
       "slots": {
         "WBL": {
-          "roleId": "IWB_S",
-          "duty": "Support"
+          "roleId": "WB_A",
+          "duty": "Attack"
         },
         "AML": {
-          "roleId": "Winger_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "WBR": {
@@ -1490,28 +1461,28 @@
           "duty": "Support"
         },
         "AMR": {
-          "roleId": "IW_A",
+          "roleId": "IF_A",
           "duty": "Attack"
         },
         "DMCL": {
-          "roleId": "RPM_S",
+          "roleId": "DM_S",
           "duty": "Support"
         },
         "DMCR": {
-          "roleId": "DM_D",
+          "roleId": "DLP_D",
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "WCB_A",
-          "duty": "Attack"
-        },
-        "DC": {
           "roleId": "CD_D",
           "duty": "Defend"
         },
+        "DC": {
+          "roleId": "Libero_S",
+          "duty": "Support"
+        },
         "DCR": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -1524,28 +1495,50 @@
       }
     },
     "preAutofix": {
-      "pairingViolations": [],
-      "pairingScore": 0.7633333333333333,
+      "pairingViolations": [
+        {
+          "id": "NP-12",
+          "severity": "CRITICAL",
+          "description": "Both attack: CWB_A bombs forward and IF_A cuts inside. Full flank channel left exposed.",
+          "suggestion": "Swap Complete Wing-Back or Inside Forward for a compatible alternative.",
+          "roleA": "CWB_A",
+          "roleB": "IF_A",
+          "slotA": "WBR",
+          "slotB": "AMR"
+        }
+      ],
+      "pairingScore": 0.7123529411764705,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9171666666666667
+      "globalScore": 0.8993235294117647
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7633333333333333,
+      "pairingScore": 0.7476470588235293,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9171666666666667
+      "globalScore": 0.9116764705882352
     },
-    "autofixFixes": [],
+    "autofixFixes": [
+      {
+        "id": "NP-12",
+        "layer": "P",
+        "applied": "Resolved NP violation: changed CWB_A to WB_D"
+      },
+      {
+        "id": "S2E_NO_WIDTH",
+        "layer": "2",
+        "applied": "Changed WB_D to WB_S for more width"
+      }
+    ],
     "errors": []
   },
   {
@@ -1563,7 +1556,7 @@
       "formation": "3-5-2",
       "philosophy": "possession-oriented tactician",
       "instructions": {
-        "mentality": "Defensive",
+        "mentality": "Positive",
         "passingDirectness": "Shorter",
         "tempo": "Normal",
         "passIntoSpace": true,
@@ -1587,12 +1580,12 @@
       },
       "slots": {
         "STCL": {
-          "roleId": "DLF_S",
+          "roleId": "F9_S",
           "duty": "Support"
         },
         "STCR": {
-          "roleId": "CF_A",
-          "duty": "Attack"
+          "roleId": "CF_S",
+          "duty": "Support"
         },
         "DMC": {
           "roleId": "DLP_S",
@@ -1603,11 +1596,11 @@
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "CM_S",
+          "roleId": "BBM_S",
           "duty": "Support"
         },
         "DCL": {
-          "roleId": "CD_D",
+          "roleId": "BPD_D",
           "duty": "Defend"
         },
         "DC": {
@@ -1623,27 +1616,20 @@
           "duty": "Support"
         },
         "WBL": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "WB_A",
+          "duty": "Attack"
         },
         "WBR": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "WB_A",
+          "duty": "Attack"
         }
       }
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7494117647058823,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
+      "pairingScore": 0.7549999999999999,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -1654,29 +1640,24 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8722941176470589
+      "globalScore": 0.91425
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7141176470588235,
+      "pairingScore": 0.7116666666666667,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.8999411764705882
+      "globalScore": 0.8990833333333335
     },
     "autofixFixes": [
       {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed WB_D to WB_S for more width"
-      },
-      {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed DM_D to DLP_S"
+        "applied": "Added playmaker: changed HB_D to DLP_S"
       }
     ],
     "errors": []
@@ -1730,11 +1711,11 @@
           "duty": "Defend"
         },
         "MCL": {
-          "roleId": "AP_S",
+          "roleId": "CM_S",
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "BBM_S",
+          "roleId": "CM_S",
           "duty": "Support"
         },
         "DCL": {
@@ -1742,8 +1723,8 @@
           "duty": "Defend"
         },
         "DC": {
-          "roleId": "BPD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "DCR": {
           "roleId": "CD_D",
@@ -1776,7 +1757,7 @@
           "slotB": "defensive_line"
         }
       ],
-      "pairingScore": 0.7466666666666666,
+      "pairingScore": 0.7975,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
@@ -1789,18 +1770,18 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9113333333333333
+      "globalScore": 0.929125
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7466666666666666,
+      "pairingScore": 0.7975,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9113333333333333
+      "globalScore": 0.929125
     },
     "autofixFixes": [
       {
@@ -1866,8 +1847,8 @@
           "duty": "Attack"
         },
         "DR": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "FB_A",
+          "duty": "Attack"
         },
         "AMR": {
           "roleId": "IW_A",
@@ -1878,12 +1859,12 @@
           "duty": "Defend"
         },
         "MCL": {
-          "roleId": "AP_S",
+          "roleId": "DLP_CM_S",
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "CM_A",
-          "duty": "Attack"
+          "roleId": "BBM_S",
+          "duty": "Support"
         },
         "DCL": {
           "roleId": "BPD_D",
@@ -1905,16 +1886,9 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7705882352941176,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
+      "pairingScore": 0.7670588235294117,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -1925,29 +1899,29 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8797058823529411
+      "globalScore": 0.9184705882352941
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7652941176470588,
+      "pairingScore": 0.7670588235294117,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9178529411764706
+      "globalScore": 0.9184705882352941
     },
     "autofixFixes": [
       {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed FB_S to WB_S for more width"
-      },
-      {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed Carrilero_S to AP_S"
+        "applied": "Added playmaker: changed HB_D to DLP_S"
+      },
+      {
+        "id": "S2B_CENTRAL_CORRIDOR",
+        "layer": "2",
+        "applied": "Changed DLP_S to DLP_D to screen central corridor"
       }
     ],
     "errors": []
@@ -1992,8 +1966,8 @@
       },
       "slots": {
         "DL": {
-          "roleId": "FB_A",
-          "duty": "Attack"
+          "roleId": "FB_S",
+          "duty": "Support"
         },
         "ML": {
           "roleId": "Winger_WM_A",
@@ -2004,31 +1978,31 @@
           "duty": "Support"
         },
         "MR": {
-          "roleId": "WM_S",
-          "duty": "Support"
+          "roleId": "WM_A",
+          "duty": "Attack"
         },
         "STCL": {
           "roleId": "PF_A",
           "duty": "Attack"
         },
         "STCR": {
-          "roleId": "DLF_A",
+          "roleId": "AF_A",
           "duty": "Attack"
         },
         "MCL": {
-          "roleId": "BWM_CM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "MCR": {
           "roleId": "DLP_CM_D",
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "BPD_D",
+          "roleId": "CD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "BPD_CO",
+          "roleId": "CD_CO",
           "duty": "Cover"
         },
         "GK": {
@@ -2039,7 +2013,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.709,
+      "pairingScore": 0.739,
       "structuralScore": 0.9,
       "structuralViolations": [
         {
@@ -2053,24 +2027,24 @@
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.85815
+      "globalScore": 0.8686500000000001
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.6863636363636363,
+      "pairingScore": 0.7272727272727272,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.8902272727272726
+      "globalScore": 0.9045454545454545
     },
     "autofixFixes": [
       {
         "id": "S2B_CENTRAL_CORRIDOR",
         "layer": "2",
-        "applied": "Changed BPD_D to BPD_CO (Cover) to protect central corridor"
+        "applied": "Changed CD_D to CD_CO (Cover) to protect central corridor"
       }
     ],
     "errors": []
@@ -2118,19 +2092,19 @@
       },
       "slots": {
         "DL": {
-          "roleId": "FB_A",
+          "roleId": "WB_A",
           "duty": "Attack"
         },
         "AML": {
-          "roleId": "IW_A",
+          "roleId": "IF_A",
           "duty": "Attack"
         },
         "DR": {
-          "roleId": "FB_A",
-          "duty": "Attack"
+          "roleId": "WB_S",
+          "duty": "Support"
         },
         "AMR": {
-          "roleId": "IF_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DMC": {
@@ -2142,8 +2116,8 @@
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "BBM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "DCL": {
           "roleId": "BPD_D",
@@ -2165,9 +2139,16 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7758823529411765,
-      "structuralScore": 1,
-      "structuralViolations": [],
+      "pairingScore": 0.7652941176470588,
+      "structuralScore": 0.9,
+      "structuralViolations": [
+        {
+          "id": "S2E_NO_WIDTH",
+          "severity": "WARNING",
+          "description": "Only 1 natural width provider in the formation.",
+          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
+        }
+      ],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -2178,20 +2159,25 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9215588235294119
+      "globalScore": 0.8778529411764706
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7652941176470588,
+      "pairingScore": 0.76,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9178529411764706
+      "globalScore": 0.9159999999999999
     },
     "autofixFixes": [
+      {
+        "id": "S2E_NO_WIDTH",
+        "layer": "2",
+        "applied": "Changed FB_S to WB_S for more width"
+      },
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
@@ -2243,36 +2229,36 @@
           "duty": "Support"
         },
         "AML": {
-          "roleId": "Winger_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "WBR": {
-          "roleId": "WB_A",
-          "duty": "Attack"
+          "roleId": "WB_S",
+          "duty": "Support"
         },
         "AMR": {
           "roleId": "IF_A",
           "duty": "Attack"
         },
         "DMCL": {
-          "roleId": "Regista_S",
-          "duty": "Support"
-        },
-        "DMCR": {
           "roleId": "DLP_S",
           "duty": "Support"
         },
+        "DMCR": {
+          "roleId": "DLP_D",
+          "duty": "Defend"
+        },
         "DCL": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "DC": {
           "roleId": "BPD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "CD_D",
-          "duty": "Defend"
+          "roleId": "WCB_A",
+          "duty": "Attack"
         },
         "GK": {
           "roleId": "SK_S",
@@ -2286,7 +2272,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.76,
+      "pairingScore": 0.7633333333333333,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
@@ -2304,18 +2290,18 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9159999999999999
+      "globalScore": 0.9171666666666667
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7433333333333333,
+      "pairingScore": 0.7583333333333333,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9101666666666668
+      "globalScore": 0.9154166666666668
     },
     "autofixFixes": [
       {
@@ -2326,7 +2312,7 @@
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed DM_D to DLP_S"
+        "applied": "Added playmaker: changed DM_S to DLP_S"
       }
     ],
     "errors": []
@@ -2346,7 +2332,7 @@
       "formation": "4-4-2",
       "philosophy": "aggressive high-press tactician",
       "instructions": {
-        "mentality": "Balanced",
+        "mentality": "Positive",
         "passingDirectness": "Mixed",
         "tempo": "Higher",
         "passIntoSpace": true,
@@ -2376,40 +2362,40 @@
           "duty": "Support"
         },
         "ML": {
-          "roleId": "Winger_WM_S",
-          "duty": "Support"
+          "roleId": "Winger_WM_A",
+          "duty": "Attack"
         },
         "DR": {
           "roleId": "FB_S",
           "duty": "Support"
         },
         "MR": {
-          "roleId": "Winger_WM_A",
-          "duty": "Attack"
+          "roleId": "WM_S",
+          "duty": "Support"
         },
         "STCL": {
           "roleId": "PF_A",
           "duty": "Attack"
         },
         "STCR": {
-          "roleId": "AF_A",
-          "duty": "Attack"
+          "roleId": "DLF_S",
+          "duty": "Support"
         },
         "MCL": {
-          "roleId": "BWM_CM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "MCR": {
           "roleId": "DLP_CM_D",
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "CD_D",
-          "duty": "Defend"
+          "roleId": "BPD_CO",
+          "duty": "Cover"
         },
         "DCR": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -2419,25 +2405,25 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.719090909090909,
+      "pairingScore": 0.7327272727272727,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9016818181818183
+      "globalScore": 0.9064545454545454
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.719090909090909,
+      "pairingScore": 0.7327272727272727,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9016818181818183
+      "globalScore": 0.9064545454545454
     },
     "autofixFixes": [],
     "errors": []
@@ -2485,7 +2471,7 @@
       },
       "slots": {
         "WBL": {
-          "roleId": "CWB_S",
+          "roleId": "WB_S",
           "duty": "Support"
         },
         "AML": {
@@ -2501,24 +2487,24 @@
           "duty": "Attack"
         },
         "DMCL": {
-          "roleId": "HB_D",
-          "duty": "Defend"
+          "roleId": "SV_A",
+          "duty": "Attack"
         },
         "DMCR": {
-          "roleId": "BWM_S",
-          "duty": "Support"
+          "roleId": "DLP_D",
+          "duty": "Defend"
         },
         "DCL": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "DC": {
-          "roleId": "BPD_D",
+          "roleId": "CD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "WCB_A",
-          "duty": "Attack"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -2532,25 +2518,25 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7366666666666666,
+      "pairingScore": 0.746,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9078333333333333
+      "globalScore": 0.9111
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7366666666666666,
+      "pairingScore": 0.746,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9078333333333333
+      "globalScore": 0.9111
     },
     "autofixFixes": [],
     "errors": []
@@ -2576,7 +2562,7 @@
         "tempo": "Higher",
         "passIntoSpace": true,
         "lineOfEngagement": "High",
-        "defensiveLine": "Standard",
+        "defensiveLine": "Higher",
         "triggerPress": "More Often",
         "whenPossessionLost": "Counter-Press",
         "whenPossessionWon": "Counter",
@@ -2590,19 +2576,19 @@
       },
       "slots": {
         "STCL": {
-          "roleId": "TF_A",
-          "duty": "Attack"
+          "roleId": "CF_S",
+          "duty": "Support"
         },
         "STCR": {
-          "roleId": "Poacher_A",
+          "roleId": "AF_A",
           "duty": "Attack"
         },
         "DMC": {
-          "roleId": "DM_D",
+          "roleId": "HB_D",
           "duty": "Defend"
         },
         "MCL": {
-          "roleId": "BBM_S",
+          "roleId": "Carrilero_S",
           "duty": "Support"
         },
         "MCR": {
@@ -2610,81 +2596,54 @@
           "duty": "Attack"
         },
         "DCL": {
-          "roleId": "CD_D",
-          "duty": "Defend"
+          "roleId": "WCB_S",
+          "duty": "Support"
         },
         "DC": {
-          "roleId": "BPD_CO",
-          "duty": "Cover"
+          "roleId": "BPD_D",
+          "duty": "Defend"
         },
         "DCR": {
-          "roleId": "CD_D",
+          "roleId": "WCB_D",
           "duty": "Defend"
         },
         "GK": {
-          "roleId": "SK_D",
-          "duty": "Defend"
+          "roleId": "SK_A",
+          "duty": "Attack"
         },
         "WBL": {
-          "roleId": "WB_A",
+          "roleId": "CWB_A",
           "duty": "Attack"
         },
         "WBR": {
-          "roleId": "CWB_A",
+          "roleId": "WB_A",
           "duty": "Attack"
         }
       }
     },
     "preAutofix": {
-      "pairingViolations": [
-        {
-          "id": "NP-22",
-          "severity": "WARNING",
-          "description": "Poacher_A depends on quick breaks from deep; a high line compresses space and risks offside.",
-          "suggestion": "Adjust defensive line or change striker role.",
-          "roleA": "Poacher_A",
-          "roleB": "DL_HIGH",
-          "slotA": "STCR",
-          "slotB": "defensive_line"
-        },
-        {
-          "id": "NP-24",
-          "severity": "WARNING",
-          "description": "TF_A is isolated aerially when the line pushes high. No midfield support close enough for knockdowns.",
-          "suggestion": "Adjust defensive line or change striker role.",
-          "roleA": "TF_A",
-          "roleB": "DL_HIGH",
-          "slotA": "STCL",
-          "slotB": "defensive_line"
-        }
-      ],
-      "pairingScore": 0.7758823529411765,
+      "pairingViolations": [],
+      "pairingScore": 0.7483333333333333,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9215588235294119
+      "globalScore": 0.9119166666666667
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7758823529411765,
+      "pairingScore": 0.7483333333333333,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9215588235294119
+      "globalScore": 0.9119166666666667
     },
-    "autofixFixes": [
-      {
-        "id": "NP-22",
-        "layer": "P",
-        "applied": "Adjusted defensive line to 'Standard' to suit striker role Poacher_A"
-      }
-    ],
+    "autofixFixes": [],
     "errors": []
   },
   {
@@ -2699,11 +2658,12 @@
       "PreferredFormation": "4-4-2"
     },
     "tactic": {
-      "formation": "3-4-2-1",
+      "formation": "3-4-3",
       "philosophy": "possession-oriented tactician",
       "instructions": {
-        "mentality": "Defensive",
+        "mentality": "Positive",
         "tempo": "Normal",
+        "passIntoSpace": true,
         "workBallIntoBox": true,
         "playOutOfDefence": true,
         "creativeFreedom": "More Expressive",
@@ -2715,50 +2675,51 @@
         "tackling": "Get Stuck In",
         "crossEngagement": "Normal",
         "defensiveLineBehavior": "Standard",
-        "focusPlayRight": true,
+        "overlapLeft": true,
+        "overlapRight": true,
         "gkDistributionMethod": "Take Short Kicks",
         "gkDistributionPace": "Normal",
         "gkDistributionTarget": "Centre-Backs"
       },
       "slots": {
-        "DMCL": {
-          "roleId": "Regista_S",
-          "duty": "Support"
-        },
-        "DMCR": {
-          "roleId": "DM_D",
-          "duty": "Defend"
-        },
-        "DCL": {
-          "roleId": "BPD_D",
-          "duty": "Defend"
-        },
-        "DC": {
-          "roleId": "BPD_CO",
-          "duty": "Cover"
-        },
-        "DCR": {
-          "roleId": "BPD_D",
-          "duty": "Defend"
-        },
-        "GK": {
-          "roleId": "SK_S",
-          "duty": "Support"
-        },
         "WBL": {
-          "roleId": "WB_S",
+          "roleId": "CWB_S",
           "duty": "Support"
+        },
+        "AML": {
+          "roleId": "IW_A",
+          "duty": "Attack"
         },
         "WBR": {
           "roleId": "WB_S",
           "duty": "Support"
         },
-        "AMCL": {
-          "roleId": "AM_A",
+        "AMR": {
+          "roleId": "IF_A",
           "duty": "Attack"
         },
-        "AMCR": {
-          "roleId": "AP_AMC_S",
+        "DMCL": {
+          "roleId": "DLP_S",
+          "duty": "Support"
+        },
+        "DMCR": {
+          "roleId": "DLP_S",
+          "duty": "Support"
+        },
+        "DCL": {
+          "roleId": "WCB_S",
+          "duty": "Support"
+        },
+        "DC": {
+          "roleId": "BPD_D",
+          "duty": "Defend"
+        },
+        "DCR": {
+          "roleId": "WCB_A",
+          "duty": "Attack"
+        },
+        "GK": {
+          "roleId": "SK_S",
           "duty": "Support"
         },
         "STC": {
@@ -2769,16 +2730,9 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7116666666666667,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
+      "pairingScore": 0.6947058823529412,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -2786,32 +2740,42 @@
           "id": "L4_VETO",
           "severity": "WARNING",
           "description": "Instruction 'shootFromDistance' is vetoed by possession-oriented tactician."
+        },
+        {
+          "id": "L4_POSSESSION_PLAYMAKERS",
+          "severity": "WARNING",
+          "description": "Fewer than 2 playmakers — possession archetype needs multiple distributors."
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8590833333333334
+      "globalScore": 0.8931470588235295
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7116666666666667,
+      "pairingScore": 0.6947058823529412,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.8990833333333335
+      "globalScore": 0.8931470588235295
     },
     "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed WB_D to WB_S for more width"
-      },
       {
         "id": "L4_VETO",
         "layer": "4",
         "applied": "Removed vetoed instructions for possession-oriented tactician"
+      },
+      {
+        "id": "L4_POSSESSION_PLAYMAKERS",
+        "layer": "4",
+        "applied": "Added playmaker: changed DM_D to DLP_S"
+      },
+      {
+        "id": "L4_POSSESSION_PLAYMAKERS",
+        "layer": "4",
+        "applied": "Added playmaker: changed DM_D to DLP_S"
       }
     ],
     "errors": []
@@ -2849,16 +2813,16 @@
         "pressingTrap": "Trap Outside",
         "shootFromDistance": true,
         "defensiveLineBehavior": "Step Up More",
-        "overlapLeft": true,
         "overlapRight": true,
         "crossType": "Whipped",
         "gkDistributionPace": "Distribute Quickly",
         "gkDistributionMethod": "Mixed",
-        "gkDistributionTarget": "Central Defenders"
+        "gkDistributionTarget": "Central Defenders",
+        "underlapLeft": true
       },
       "slots": {
         "WBL": {
-          "roleId": "CWB_S",
+          "roleId": "WB_S",
           "duty": "Support"
         },
         "AML": {
@@ -2866,32 +2830,32 @@
           "duty": "Attack"
         },
         "WBR": {
-          "roleId": "WB_A",
-          "duty": "Attack"
+          "roleId": "WB_S",
+          "duty": "Support"
         },
         "AMR": {
-          "roleId": "IF_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DMCL": {
-          "roleId": "SV_A",
-          "duty": "Attack"
+          "roleId": "DM_D",
+          "duty": "Defend"
         },
         "DMCR": {
           "roleId": "DLP_D",
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "WCB_A",
+          "duty": "Attack"
         },
         "DC": {
           "roleId": "CD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "BPD_D",
-          "duty": "Defend"
+          "roleId": "WCB_A",
+          "duty": "Attack"
         },
         "GK": {
           "roleId": "SK_A",
@@ -2905,25 +2869,25 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7566666666666666,
+      "pairingScore": 0.7617647058823529,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9148333333333334
+      "globalScore": 0.9166176470588236
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7566666666666666,
+      "pairingScore": 0.7617647058823529,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9148333333333334
+      "globalScore": 0.9166176470588236
     },
     "autofixFixes": [],
     "errors": []
@@ -2970,11 +2934,11 @@
       },
       "slots": {
         "WBL": {
-          "roleId": "WB_A",
-          "duty": "Attack"
+          "roleId": "CWB_S",
+          "duty": "Support"
         },
         "AML": {
-          "roleId": "IF_A",
+          "roleId": "Winger_A",
           "duty": "Attack"
         },
         "WBR": {
@@ -2982,28 +2946,28 @@
           "duty": "Support"
         },
         "AMR": {
-          "roleId": "Winger_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DMCL": {
-          "roleId": "BWM_D",
-          "duty": "Defend"
+          "roleId": "SV_A",
+          "duty": "Attack"
         },
         "DMCR": {
-          "roleId": "RPM_S",
-          "duty": "Support"
+          "roleId": "DLP_D",
+          "duty": "Defend"
         },
         "DCL": {
-          "roleId": "WCB_S",
-          "duty": "Support"
+          "roleId": "BPD_D",
+          "duty": "Defend"
         },
         "DC": {
           "roleId": "CD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "WCB_S",
-          "duty": "Support"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -3017,25 +2981,25 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7494117647058823,
+      "pairingScore": 0.7705882352941176,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9122941176470589
+      "globalScore": 0.9197058823529412
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7494117647058823,
+      "pairingScore": 0.7705882352941176,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9122941176470589
+      "globalScore": 0.9197058823529412
     },
     "autofixFixes": [],
     "errors": []
@@ -3085,23 +3049,23 @@
           "duty": "Support"
         },
         "AML": {
-          "roleId": "IW_A",
+          "roleId": "Winger_A",
           "duty": "Attack"
         },
         "DR": {
-          "roleId": "WB_S",
+          "roleId": "FB_S",
           "duty": "Support"
         },
         "AMR": {
-          "roleId": "IF_S",
+          "roleId": "IW_S",
           "duty": "Support"
         },
         "DMCL": {
-          "roleId": "BWM_D",
+          "roleId": "DM_D",
           "duty": "Defend"
         },
         "DMCR": {
-          "roleId": "Anchor_D",
+          "roleId": "DLP_D",
           "duty": "Defend"
         },
         "DCL": {
@@ -3128,13 +3092,13 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.8028571428571428,
+      "pairingScore": 0.8307142857142856,
       "structuralScore": 0.9,
       "structuralViolations": [
         {
           "id": "S2E_NO_WIDTH",
           "severity": "WARNING",
-          "description": "Only 0 natural width providers in the formation.",
+          "description": "Only 1 natural width provider in the formation.",
           "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
         }
       ],
@@ -3148,25 +3112,20 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.891
+      "globalScore": 0.9007499999999999
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.8114285714285714,
+      "pairingScore": 0.8264285714285714,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9339999999999999
+      "globalScore": 0.9392499999999999
     },
     "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed FB_S to WB_S for more width"
-      },
       {
         "id": "S2E_NO_WIDTH",
         "layer": "2",
@@ -3220,16 +3179,16 @@
       },
       "slots": {
         "WBL": {
-          "roleId": "WB_S",
-          "duty": "Support"
+          "roleId": "WB_A",
+          "duty": "Attack"
         },
         "AML": {
           "roleId": "IF_A",
           "duty": "Attack"
         },
         "WBR": {
-          "roleId": "CWB_S",
-          "duty": "Support"
+          "roleId": "CWB_A",
+          "duty": "Attack"
         },
         "AMR": {
           "roleId": "IW_A",
@@ -3244,16 +3203,16 @@
           "duty": "Defend"
         },
         "DCL": {
-          "roleId": "WCB_A",
-          "duty": "Attack"
-        },
-        "DC": {
           "roleId": "CD_D",
           "duty": "Defend"
         },
+        "DC": {
+          "roleId": "Libero_S",
+          "duty": "Support"
+        },
         "DCR": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_A",
@@ -3267,7 +3226,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7366666666666666,
+      "pairingScore": 0.7547058823529411,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
@@ -3280,18 +3239,18 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.9078333333333333
+      "globalScore": 0.9141470588235294
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7366666666666666,
+      "pairingScore": 0.7547058823529411,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9078333333333333
+      "globalScore": 0.9141470588235294
     },
     "autofixFixes": [
       {
@@ -3317,10 +3276,11 @@
       "formation": "4-3-3 DM",
       "philosophy": "possession-oriented tactician",
       "instructions": {
-        "mentality": "Defensive",
+        "mentality": "Positive",
         "attackingWidth": "Fairly Narrow",
         "passingDirectness": "Shorter",
         "tempo": "Normal",
+        "passIntoSpace": true,
         "workBallIntoBox": true,
         "playOutOfDefence": true,
         "creativeFreedom": "More Expressive",
@@ -3332,6 +3292,7 @@
         "tackling": "Get Stuck In",
         "crossEngagement": "Normal",
         "defensiveLineBehavior": "Standard",
+        "overlapLeft": true,
         "overlapRight": true,
         "gkDistributionMethod": "Take Short Kicks",
         "gkDistributionPace": "Normal",
@@ -3343,32 +3304,32 @@
           "duty": "Support"
         },
         "AML": {
-          "roleId": "Winger_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DR": {
-          "roleId": "FB_S",
+          "roleId": "WB_S",
           "duty": "Support"
         },
         "AMR": {
-          "roleId": "IW_S",
-          "duty": "Support"
+          "roleId": "IF_A",
+          "duty": "Attack"
         },
         "DMC": {
-          "roleId": "DLP_S",
-          "duty": "Support"
+          "roleId": "DLP_D",
+          "duty": "Defend"
         },
         "MCL": {
-          "roleId": "DLP_CM_S",
+          "roleId": "AP_S",
           "duty": "Support"
         },
         "MCR": {
-          "roleId": "BBM_S",
-          "duty": "Support"
+          "roleId": "CM_A",
+          "duty": "Attack"
         },
         "DCL": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "BPD_D",
+          "duty": "Defend"
         },
         "DCR": {
           "roleId": "BPD_D",
@@ -3386,7 +3347,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7533333333333333,
+      "pairingScore": 0.7458823529411764,
       "structuralScore": 0.9,
       "structuralViolations": [
         {
@@ -3406,29 +3367,39 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8736666666666668
+      "globalScore": 0.8710588235294119
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.725,
+      "pairingScore": 0.7547058823529411,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.90375
+      "globalScore": 0.9141470588235294
     },
     "autofixFixes": [
       {
         "id": "S2E_NO_WIDTH",
         "layer": "2",
-        "applied": "Changed FB_D to WB_S for more width"
+        "applied": "Changed FB_S to WB_S for more width"
       },
       {
         "id": "L4_POSSESSION_PLAYMAKERS",
         "layer": "4",
-        "applied": "Added playmaker: changed HB_D to DLP_S"
+        "applied": "Added playmaker: changed DM_D to DLP_S"
+      },
+      {
+        "id": "S2B_CENTRAL_CORRIDOR",
+        "layer": "2",
+        "applied": "Changed DLP_S to DLP_D to screen central corridor"
+      },
+      {
+        "id": "L4_POSSESSION_PLAYMAKERS",
+        "layer": "4",
+        "applied": "Added playmaker: changed BWM_CM_S to AP_S"
       }
     ],
     "errors": []
@@ -3448,7 +3419,7 @@
       "formation": "4-3-3 DM",
       "philosophy": "aggressive high-press tactician",
       "instructions": {
-        "mentality": "Balanced",
+        "mentality": "Positive",
         "attackingWidth": "Fairly Wide",
         "passingDirectness": "Mixed",
         "tempo": "Much Higher",
@@ -3472,7 +3443,7 @@
         "gkDistributionPace": "Distribute Quickly",
         "gkDistributionMethod": "Take Short Kicks",
         "gkDistributionTarget": "Central Defenders",
-        "underlapLeft": true
+        "overlapLeft": true
       },
       "slots": {
         "DL": {
@@ -3480,12 +3451,12 @@
           "duty": "Support"
         },
         "AML": {
-          "roleId": "Winger_A",
+          "roleId": "IW_A",
           "duty": "Attack"
         },
         "DR": {
-          "roleId": "FB_S",
-          "duty": "Support"
+          "roleId": "FB_A",
+          "duty": "Attack"
         },
         "AMR": {
           "roleId": "IF_A",
@@ -3493,129 +3464,6 @@
         },
         "DMC": {
           "roleId": "DM_D",
-          "duty": "Defend"
-        },
-        "MCL": {
-          "roleId": "DLP_CM_S",
-          "duty": "Support"
-        },
-        "MCR": {
-          "roleId": "BBM_S",
-          "duty": "Support"
-        },
-        "DCL": {
-          "roleId": "BPD_CO",
-          "duty": "Cover"
-        },
-        "DCR": {
-          "roleId": "CD_D",
-          "duty": "Defend"
-        },
-        "GK": {
-          "roleId": "SK_A",
-          "duty": "Attack"
-        },
-        "STC": {
-          "roleId": "PF_A",
-          "duty": "Attack"
-        }
-      }
-    },
-    "preAutofix": {
-      "pairingViolations": [],
-      "pairingScore": 0.7533333333333333,
-      "structuralScore": 0.9,
-      "structuralViolations": [
-        {
-          "id": "S2E_NO_WIDTH",
-          "severity": "WARNING",
-          "description": "Only 1 natural width provider in the formation.",
-          "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
-        }
-      ],
-      "zoneViolations": [],
-      "zoneScore": 1,
-      "archetypeViolations": [],
-      "archetypeScore": 100,
-      "globalScore": 0.8736666666666668
-    },
-    "postAutofix": {
-      "pairingViolations": [],
-      "pairingScore": 0.7533333333333333,
-      "structuralScore": 1,
-      "structuralViolations": [],
-      "zoneViolations": [],
-      "zoneScore": 1,
-      "archetypeViolations": [],
-      "archetypeScore": 100,
-      "globalScore": 0.9136666666666666
-    },
-    "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed IWB_S to WB_S for more width"
-      }
-    ],
-    "errors": []
-  },
-  {
-    "manager": {
-      "Name": "Giovanni Sartori",
-      "CA": 151,
-      "Att": 5,
-      "Tec": 6,
-      "Dis": 2,
-      "PressingStyle": "More Often",
-      "PlayingMentality": "Very Cautious",
-      "PreferredFormation": "4-3-3 DM Wide"
-    },
-    "tactic": {
-      "formation": "4-3-3 DM",
-      "philosophy": "aggressive high-press tactician",
-      "instructions": {
-        "mentality": "Defensive",
-        "attackingWidth": "Fairly Narrow",
-        "passingDirectness": "Mixed",
-        "tempo": "Higher",
-        "playOutOfDefence": true,
-        "lineOfEngagement": "High",
-        "defensiveLine": "Standard",
-        "triggerPress": "Much More Often",
-        "whenPossessionLost": "Counter-Press",
-        "whenPossessionWon": "Counter",
-        "tackling": "Get Stuck In",
-        "crossEngagement": "Normal",
-        "defensiveWidth": "Wider",
-        "pressingTrap": "Trap Outside",
-        "stayOnFeet": true,
-        "defensiveLineBehavior": "Step Up More",
-        "overlapLeft": true,
-        "overlapRight": true,
-        "gkDistributionPace": "Distribute Quickly",
-        "gkDistributionMethod": "Take Short Kicks",
-        "gkDistributionTarget": "Central Defenders",
-        "focusPlayLeft": true
-      },
-      "slots": {
-        "DL": {
-          "roleId": "WB_S",
-          "duty": "Support"
-        },
-        "AML": {
-          "roleId": "IF_A",
-          "duty": "Attack"
-        },
-        "DR": {
-          "roleId": "WB_S",
-          "duty": "Support"
-        },
-        "AMR": {
-          "roleId": "IF_S",
-          "duty": "Support"
-        },
-        "DMC": {
-          "roleId": "BWM_D",
           "duty": "Defend"
         },
         "MCL": {
@@ -3646,7 +3494,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7699999999999999,
+      "pairingScore": 0.7483333333333333,
       "structuralScore": 0.9,
       "structuralViolations": [
         {
@@ -3656,6 +3504,122 @@
           "suggestion": "Add a Winger/WB/WM to stretch the opposition defensively."
         }
       ],
+      "zoneViolations": [],
+      "zoneScore": 1,
+      "archetypeViolations": [],
+      "archetypeScore": 100,
+      "globalScore": 0.8719166666666667
+    },
+    "postAutofix": {
+      "pairingViolations": [],
+      "pairingScore": 0.7616666666666666,
+      "structuralScore": 1,
+      "structuralViolations": [],
+      "zoneViolations": [],
+      "zoneScore": 1,
+      "archetypeViolations": [],
+      "archetypeScore": 100,
+      "globalScore": 0.9165833333333333
+    },
+    "autofixFixes": [
+      {
+        "id": "S2E_NO_WIDTH",
+        "layer": "2",
+        "applied": "Changed FB_S to WB_S for more width"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "manager": {
+      "Name": "Giovanni Sartori",
+      "CA": 151,
+      "Att": 5,
+      "Tec": 6,
+      "Dis": 2,
+      "PressingStyle": "More Often",
+      "PlayingMentality": "Very Cautious",
+      "PreferredFormation": "4-3-3 DM Wide"
+    },
+    "tactic": {
+      "formation": "4-3-3 DM",
+      "philosophy": "aggressive high-press tactician",
+      "instructions": {
+        "mentality": "Positive",
+        "attackingWidth": "Fairly Narrow",
+        "passingDirectness": "Mixed",
+        "tempo": "Higher",
+        "playOutOfDefence": true,
+        "lineOfEngagement": "High",
+        "defensiveLine": "Standard",
+        "triggerPress": "Much More Often",
+        "whenPossessionLost": "Counter-Press",
+        "whenPossessionWon": "Counter",
+        "tackling": "Get Stuck In",
+        "crossEngagement": "Normal",
+        "defensiveWidth": "Wider",
+        "pressingTrap": "Trap Outside",
+        "stayOnFeet": true,
+        "defensiveLineBehavior": "Step Up More",
+        "overlapLeft": true,
+        "gkDistributionPace": "Distribute Quickly",
+        "gkDistributionMethod": "Take Short Kicks",
+        "gkDistributionTarget": "Central Defenders",
+        "focusPlayLeft": true,
+        "underlapRight": true
+      },
+      "slots": {
+        "DL": {
+          "roleId": "FB_A",
+          "duty": "Attack"
+        },
+        "AML": {
+          "roleId": "IF_A",
+          "duty": "Attack"
+        },
+        "DR": {
+          "roleId": "IFB_D",
+          "duty": "Defend"
+        },
+        "AMR": {
+          "roleId": "Winger_A",
+          "duty": "Attack"
+        },
+        "DMC": {
+          "roleId": "HB_D",
+          "duty": "Defend"
+        },
+        "MCL": {
+          "roleId": "DLP_CM_S",
+          "duty": "Support"
+        },
+        "MCR": {
+          "roleId": "BWM_CM_S",
+          "duty": "Support"
+        },
+        "DCL": {
+          "roleId": "CD_D",
+          "duty": "Defend"
+        },
+        "DCR": {
+          "roleId": "CD_D",
+          "duty": "Defend"
+        },
+        "GK": {
+          "roleId": "SK_A",
+          "duty": "Attack"
+        },
+        "STC": {
+          "roleId": "PF_A",
+          "duty": "Attack"
+        }
+      }
+    },
+    "preAutofix": {
+      "pairingViolations": [],
+      "pairingScore": 0.7652941176470588,
+      "structuralScore": 1,
+      "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [
@@ -3671,25 +3635,20 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8795
+      "globalScore": 0.9178529411764706
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7583333333333333,
+      "pairingScore": 0.7652941176470588,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9154166666666668
+      "globalScore": 0.9178529411764706
     },
     "autofixFixes": [
-      {
-        "id": "S2E_NO_WIDTH",
-        "layer": "2",
-        "applied": "Changed FB_S to WB_S for more width"
-      },
       {
         "id": "L4_VETO",
         "layer": "4",
@@ -3769,12 +3728,12 @@
           "duty": "Support"
         },
         "DCL": {
-          "roleId": "CD_D",
+          "roleId": "BPD_D",
           "duty": "Defend"
         },
         "DCR": {
-          "roleId": "CD_CO",
-          "duty": "Cover"
+          "roleId": "CD_D",
+          "duty": "Defend"
         },
         "GK": {
           "roleId": "SK_D",
@@ -3788,7 +3747,7 @@
     },
     "preAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7637499999999999,
+      "pairingScore": 0.7675,
       "structuralScore": 0.9,
       "structuralViolations": [
         {
@@ -3808,18 +3767,18 @@
         }
       ],
       "archetypeScore": 100,
-      "globalScore": 0.8773124999999999
+      "globalScore": 0.878625
     },
     "postAutofix": {
       "pairingViolations": [],
-      "pairingScore": 0.7637499999999999,
+      "pairingScore": 0.7581249999999999,
       "structuralScore": 1,
       "structuralViolations": [],
       "zoneViolations": [],
       "zoneScore": 1,
       "archetypeViolations": [],
       "archetypeScore": 100,
-      "globalScore": 0.9173125
+      "globalScore": 0.9153437499999999
     },
     "autofixFixes": [
       {

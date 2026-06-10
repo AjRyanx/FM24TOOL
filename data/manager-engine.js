@@ -314,12 +314,37 @@ function resolveFormation(manager, squad, dna, philosophy) {
   }
 
   var bestForm = "4-2-3-1";
-  var bestScore = 0.35;
+  var bestScore = -1;
+  var candidates = [];
   for (var form in scores) {
-    if (scores.hasOwnProperty(form) && scores[form] > bestScore) {
-      bestScore = scores[form];
-      bestForm = form;
+    if (scores.hasOwnProperty(form)) {
+      if (scores[form] > bestScore) {
+        bestScore = scores[form];
+      }
     }
+  }
+
+  if (bestScore > 0.35) {
+    for (var form in scores) {
+      if (scores.hasOwnProperty(form)) {
+        if (scores[form] >= bestScore * 0.92) {
+          candidates.push({ form: form, score: scores[form] });
+        }
+      }
+    }
+    candidates.sort(function (a, b) { return b.score - a.score; });
+
+    var pickIdx = 0;
+    if (candidates.length > 1) {
+      var roll = dna.seed;
+      if (roll < 0.6) {
+        pickIdx = 0;
+      } else {
+        pickIdx = Math.floor((roll - 0.6) / 0.4 * (candidates.length - 1)) + 1;
+        if (pickIdx >= candidates.length) pickIdx = candidates.length - 1;
+      }
+    }
+    bestForm = candidates[pickIdx].form;
   }
 
   // HIGH ADAPTABILITY (>= 0.75): Check if another formation family fits squad better
@@ -952,9 +977,22 @@ function getMidfieldCombination(manager, dmCount, cmCount, instructions, philoso
   var instr = instructions || {};
   if (!dna) dna = getManagerDNA(manager.Name, manager);
 
+  var att = normalizeAttr(manager.Att);
+  var isCautiousOrDefensive = (instr.mentality === "Defensive" || instr.mentality === "Cautious" || att < 0.4);
+
   // Filter to combos that match this formation's DM+CM slot counts
   var valid = MIDFIELD_COMBOS.filter(function (c) {
-    return c.dm.length === dmCount && c.cm.length === cmCount;
+    if (c.dm.length !== dmCount || c.cm.length !== cmCount) return false;
+    if (isCautiousOrDefensive) {
+      // Exclude attacking midfielder roles in cautious/defensive/low-attacking setups
+      var hasAttackRole = c.cm.some(function(r) {
+        return r === "CM_A" || r === "Mezzala_A" || r === "AP_A";
+      }) || c.dm.some(function(r) {
+        return r === "SV_A";
+      });
+      if (hasAttackRole) return false;
+    }
+    return true;
   });
   if (valid.length === 0) return null;
 
@@ -1840,6 +1878,32 @@ function applyPhilosophyConstraints(instructions, philosophy, manager) {
     instructions.tempo = clampEnumToMax(
       instructions.tempo, TEMPO_SCALE, profile.tempoMax
     );
+  }
+
+  // 5. Archetype-driven team mentality safeguards to resolve contradictions
+  if (philosophy === "aggressive high-press tactician") {
+    // Relentless high-press cannot be played on Cautious or Defensive team mentality.
+    if (instructions.mentality === "Defensive" || instructions.mentality === "Cautious" || instructions.mentality === "Balanced") {
+      instructions.mentality = "Positive";
+    }
+  } else if (philosophy === "possession-oriented tactician") {
+    // Possession build-up cannot be played on Cautious or Defensive team mentality.
+    if (instructions.mentality === "Defensive" || instructions.mentality === "Cautious") {
+      instructions.mentality = "Positive";
+    }
+  }
+
+  // 6. Prevent contradiction: Cautious or Defensive mentality should not have a high line of engagement or defensive line, nor should they counter-press.
+  if (instructions.mentality === "Defensive" || instructions.mentality === "Cautious") {
+    if (instructions.lineOfEngagement === "High" || instructions.lineOfEngagement === "Much Higher") {
+      instructions.lineOfEngagement = "Mid block";
+    }
+    if (instructions.defensiveLine === "Higher" || instructions.defensiveLine === "Much Higher") {
+      instructions.defensiveLine = "Standard";
+    }
+    if (instructions.whenPossessionLost === "Counter-Press") {
+      instructions.whenPossessionLost = "Regroup";
+    }
   }
 
   return instructions;
