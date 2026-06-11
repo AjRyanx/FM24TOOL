@@ -231,7 +231,7 @@
     if (!slots) return violations;
 
     var dLine = (instructions && instructions.defensiveLine) || "Standard";
-    var loe = (instructions && instructions.LOE) || "Standard";
+    var loe = (instructions && instructions.lineOfEngagement) || "Standard";
 
     // Determine front press level
     var frontRoles = [];
@@ -298,7 +298,7 @@
 
     // Line height validator
     var isHighDL = (dLine === "Higher" || dLine === "Much Higher");
-    var isHighLOE = (loe === "Higher" || loe === "Much Higher");
+    var isHighLOE = (loe === "High" || loe === "Much Higher");
     var isDeepDL = (dLine === "Lower" || dLine === "Much Lower");
 
     if (isHighDL && isHighLOE) {
@@ -384,7 +384,7 @@
         if (!def || !roleId || iwbSids.indexOf(sid) !== -1) return;
         var prof = getProfile(roleId);
         if (prof && (prof.special.holder || (prof.movement.hold_position || 0) > 0.7)) hasCentralHolder = true;
-        if (prof && prof.movement.width_drift > 0.7) hasWidthProvider = true;
+        if (prof && prof.movement.width_drift >= 0.7) hasWidthProvider = true;
       });
       if (!hasCentralHolder) {
         violations.push({
@@ -533,7 +533,7 @@
       if (!prof) return;
       var wd = prof.movement.width_drift || 0;
 
-      if (wd > 0.7) {
+      if (wd >= 0.7) {
         widthProviders++;
         if (def.flank === "L") leftOvercommit++;
         else if (def.flank === "R") rightOvercommit++;

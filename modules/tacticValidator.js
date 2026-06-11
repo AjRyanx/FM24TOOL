@@ -36,10 +36,17 @@
     var pairingViolations = [];
     var pairingScore = 100;
 
+    var p = tactic.philosophy || tactic.archetype || "balanced";
+    if (typeof p === "string") {
+      p = p.toLowerCase();
+    } else {
+      p = "balanced";
+    }
+
     // Layer 1: Pairing Engine (NP-01 to NP-30)
     if (typeof global.evaluatePairings === "function") {
       var instructions = tactic.instructions || {};
-      var archetype = tactic.archetype || null;
+      var archetype = tactic.archetype || tactic.philosophy || null;
       var pairingResult = global.evaluatePairings(slots, instructions, archetype);
       pairingScore = Math.round(pairingResult.pairingScore * 100);
       pairingViolations = pairingResult.violations;
@@ -146,8 +153,15 @@
         warnings.push("Flank " + side + ": Double inside roles clog central channels (-15)");
       }
       if (!waCuts && !wdOverlaps && (wdRole.abbreviation === "IFB" || wdRole.abbreviation === "NFB" || wdRole.duty === "Defend")) {
-        compScore -= 15;
-        warnings.push("Flank " + side + ": Lack of overlap/underlap - empty wide channels (-15)");
+        if (p === "disciplined defensive organiser") {
+          compRules.push("Flank " + side + ": Defensive flank structure with non-overlapping fullback (acceptable for Defensive Organiser)");
+        } else if (p === "direct counter-attacker") {
+          compScore -= 5;
+          warnings.push("Flank " + side + ": Lack of overlap/underlap - empty wide channels (-5)");
+        } else {
+          compScore -= 15;
+          warnings.push("Flank " + side + ": Lack of overlap/underlap - empty wide channels (-15)");
+        }
       }
     }
     checkFlankCompatibility("L");
@@ -210,14 +224,34 @@
       }
     });
 
-    // Standard baseline goals
-    if (duties.Defend < 3 || duties.Defend > 5) {
-      balScore -= 10;
-      warnings.push("Suboptimal defend duties: currently " + duties.Defend + " (recommended: 3-4)");
+    // Standard baseline goals (philosophy-aware)
+    var minDefend = 3, maxDefend = 5;
+    var minAttack = 2, maxAttack = 4;
+
+    if (p === "disciplined defensive organiser" || p === "direct counter-attacker") {
+      minDefend = 3;
+      maxDefend = 6;
+      minAttack = 1;
+      maxAttack = 3;
+    } else if (p === "possession-oriented tactician") {
+      minDefend = 2;
+      maxDefend = 4;
+      minAttack = 2;
+      maxAttack = 4;
+    } else if (p === "aggressive high-press tactician") {
+      minDefend = 3;
+      maxDefend = 4;
+      minAttack = 3;
+      maxAttack = 5;
     }
-    if (duties.Attack < 2 || duties.Attack > 4) {
+
+    if (duties.Defend < minDefend || duties.Defend > maxDefend) {
       balScore -= 10;
-      warnings.push("Suboptimal attack duties: currently " + duties.Attack + " (recommended: 2-3)");
+      warnings.push("Suboptimal defend duties for " + p + ": currently " + duties.Defend + " (recommended: " + minDefend + "-" + maxDefend + ")");
+    }
+    if (duties.Attack < minAttack || duties.Attack > maxAttack) {
+      balScore -= 10;
+      warnings.push("Suboptimal attack duties for " + p + ": currently " + duties.Attack + " (recommended: " + minAttack + "-" + maxAttack + ")");
     }
 
     // B. Rest Defence
@@ -361,37 +395,131 @@
       }
     });
 
-    if (covDetails.midfieldController) {
-      covScore += 20;
-    } else {
-      warnings.push("Lack of midfield controller to maintain possession and tempo");
-    }
+    if (p === "possession-oriented tactician") {
+      // Possession needs controller, playmaker, and wide expansion
+      if (covDetails.midfieldController) {
+        covScore += 25;
+      } else {
+        warnings.push("Possession style requires a midfield controller (e.g., DLP, CM-S) to dictate play");
+      }
 
-    if (covDetails.defensiveShield) {
-      covScore += 20;
-      positives.push("Midfield defensive shield is properly established");
-    } else {
-      warnings.push("No dedicated defensive shield/anchor in midfield");
-    }
+      if (covDetails.chanceCreator) {
+        covScore += 25;
+      } else {
+        warnings.push("Possession style requires a creative playmaker (e.g., AP, TQ, F9) to unlock defences");
+      }
 
-    if (covDetails.widthL) covScore += 10;
-    if (covDetails.widthR) covScore += 10;
-    if (!covDetails.widthL || !covDetails.widthR) {
-      warnings.push("Flank penetration width is unbalanced or missing");
-    }
+      if (covDetails.defensiveShield) {
+        covScore += 15;
+      } else {
+        warnings.push("No midfield anchor present to protect the possession block");
+      }
 
-    if (covDetails.boxThreat) {
-      covScore += 20;
-      positives.push("Excellent box threat/attacking runner options");
-    } else {
-      warnings.push("No direct attacking runner/box threat targeting the box");
-    }
+      if (covDetails.widthL) covScore += 10;
+      if (covDetails.widthR) covScore += 10;
+      if (!covDetails.widthL || !covDetails.widthR) {
+        warnings.push("Possession style needs wide options on both flanks to stretch the opponent");
+      }
 
-    if (covDetails.chanceCreator) {
-      covScore += 20;
-      positives.push("Dedicated chance creator / playmaker role present");
+      if (covDetails.boxThreat) {
+        covScore += 15;
+      } else {
+        warnings.push("No attacking runner/box threat present");
+      }
+    } else if (p === "aggressive high-press tactician") {
+      // Press needs shield, box threat (runners), and wide options
+      if (covDetails.defensiveShield) {
+        covScore += 25;
+      } else {
+        warnings.push("High-press style requires a defensive anchor (e.g., BWM, DM-D) to protect against counters");
+      }
+
+      if (covDetails.boxThreat) {
+        covScore += 25;
+      } else {
+        warnings.push("High-press style requires direct attacking runners (e.g., IF-A, IW-A, AF-A) to press and penetrate");
+      }
+
+      if (covDetails.midfieldController) covScore += 15;
+      if (covDetails.chanceCreator) covScore += 15;
+      if (covDetails.widthL) covScore += 10;
+      if (covDetails.widthR) covScore += 10;
+
+      if (!covDetails.widthL || !covDetails.widthR) {
+        warnings.push("Wide options recommended to support pressing trap wide");
+      }
+    } else if (p === "disciplined defensive organiser") {
+      // Defensive organiser needs defensive shield, and width for clearing, but controller/playmaker are optional
+      covScore = 30; // High base for defensive stability
+      if (covDetails.defensiveShield) {
+        covScore += 30;
+        positives.push("Midfield defensive shield is properly established");
+      } else {
+        warnings.push("Defensive block lacks an anchor/defensive shield");
+      }
+
+      if (covDetails.widthL) covScore += 10;
+      if (covDetails.widthR) covScore += 10;
+      if (covDetails.boxThreat) covScore += 10;
+
+      // Optional (no warning if missing, but boost if present)
+      if (covDetails.midfieldController) covScore += 5;
+      if (covDetails.chanceCreator) covScore += 5;
+    } else if (p === "direct counter-attacker") {
+      // Counter-attacker needs defensive shield and box threat (runners), controller/playmaker are optional
+      covScore = 20; // Medium base
+      if (covDetails.defensiveShield) {
+        covScore += 25;
+      } else {
+        warnings.push("Counter-attack style needs a defensive shield to win the ball back");
+      }
+
+      if (covDetails.boxThreat) {
+        covScore += 25;
+      } else {
+        warnings.push("Counter-attack style needs quick runners (e.g., AF-A, W-A) to attack space on transitions");
+      }
+
+      if (covDetails.widthL) covScore += 10;
+      if (covDetails.widthR) covScore += 10;
+
+      // Playmakers / Controllers are optional (no warning if missing, but boost if present)
+      if (covDetails.midfieldController) covScore += 5;
+      if (covDetails.chanceCreator) covScore += 5;
     } else {
-      warnings.push("No standard creative outlet/playmaker present");
+      // Balanced / Pragmatic / Other (Original logic)
+      if (covDetails.midfieldController) {
+        covScore += 20;
+      } else {
+        warnings.push("Lack of midfield controller to maintain possession and tempo");
+      }
+
+      if (covDetails.defensiveShield) {
+        covScore += 20;
+        positives.push("Midfield defensive shield is properly established");
+      } else {
+        warnings.push("No dedicated defensive shield/anchor in midfield");
+      }
+
+      if (covDetails.widthL) covScore += 10;
+      if (covDetails.widthR) covScore += 10;
+      if (!covDetails.widthL || !covDetails.widthR) {
+        warnings.push("Flank penetration width is unbalanced or missing");
+      }
+
+      if (covDetails.boxThreat) {
+        covScore += 20;
+        positives.push("Excellent box threat/attacking runner options");
+      } else {
+        warnings.push("No direct attacking runner/box threat targeting the box");
+      }
+
+      if (covDetails.chanceCreator) {
+        covScore += 20;
+        positives.push("Dedicated chance creator / playmaker role present");
+      } else {
+        warnings.push("No standard creative outlet/playmaker present");
+      }
     }
 
     covScore = Math.max(0, Math.min(100, covScore));
@@ -441,7 +569,52 @@
     // ────────────────────────────────────────────────────────
     // 6. OVERALL SCORE CALCULATION
     // ────────────────────────────────────────────────────────
-    var overallScore = Math.round(0.25 * compScore + 0.20 * balScore + 0.20 * covScore + 0.15 * pairingScore + 0.15 * zoneScore + 0.05 * archetypeScore);
+    // Dynamic weights based on philosophy
+    var compWeight = 0.25;
+    var balWeight = 0.20;
+    var covWeight = 0.20;
+    var pairingWeight = 0.15;
+    var zoneWeight = 0.15;
+    var archetypeWeight = 0.05;
+
+    if (p === "possession-oriented tactician") {
+      compWeight = 0.20;
+      balWeight = 0.20;
+      covWeight = 0.25;
+      pairingWeight = 0.15;
+      zoneWeight = 0.15;
+      archetypeWeight = 0.05;
+    } else if (p === "aggressive high-press tactician") {
+      compWeight = 0.20;
+      balWeight = 0.20;
+      covWeight = 0.20;
+      pairingWeight = 0.15;
+      zoneWeight = 0.15;
+      archetypeWeight = 0.10;
+    } else if (p === "disciplined defensive organiser") {
+      compWeight = 0.25;
+      balWeight = 0.30;
+      covWeight = 0.10;
+      pairingWeight = 0.15;
+      zoneWeight = 0.15;
+      archetypeWeight = 0.05;
+    } else if (p === "direct counter-attacker") {
+      compWeight = 0.25;
+      balWeight = 0.25;
+      covWeight = 0.15;
+      pairingWeight = 0.15;
+      zoneWeight = 0.15;
+      archetypeWeight = 0.05;
+    }
+
+    var overallScore = Math.round(
+      compWeight * compScore +
+      balWeight * balScore +
+      covWeight * covScore +
+      pairingWeight * pairingScore +
+      zoneWeight * zoneScore +
+      archetypeWeight * archetypeScore
+    );
 
     return {
       overallScore: overallScore,

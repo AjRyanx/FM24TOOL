@@ -271,7 +271,7 @@
       var roleId = slots[sid].roleId;
       var prof = getProfile(roleId);
       if (!prof) return;
-      if ((prof.movement.width_drift || 0) <= 0.7) {
+      if ((prof.movement.width_drift || 0) < 0.7) {
         var isBoosted = profile && profile.roleBoost && profile.roleBoost[roleId];
         candidates.push({
           sid: sid,
@@ -325,7 +325,7 @@
       if (!def || def.flank !== side || !slots[sid].roleId) return;
       var roleId = slots[sid].roleId;
       var prof = getProfile(roleId);
-      if (prof && prof.movement.width_drift > 0.7) {
+      if (prof && prof.movement.width_drift >= 0.7) {
         candidates.push({ sid: sid, roleId: roleId, strata: def.strata, duty: slots[sid].duty });
       }
     });
@@ -881,15 +881,15 @@
       var role = getRole(rid);
       if (!role || role.isPlaymaker) return;
       if (def.strata === "CM" || def.strata === "DM" || def.strata === "AMC") {
-        candidates.push({ sid: sid, rid: rid, strata: def.strata });
+        candidates.push({ sid: sid, rid: rid, strata: def.strata, duty: slots[sid].duty });
       }
     });
     if (candidates.length === 0) return null;
     var target = candidates[0];
     var replacement = null;
-    if (target.strata === "CM") replacement = "AP_S";
-    else if (target.strata === "DM") replacement = "DLP_S";
-    else if (target.strata === "AMC") replacement = "AP_AMC_S";
+    if (target.strata === "CM") replacement = target.duty === "Attack" ? "AP_A" : "AP_S";
+    else if (target.strata === "DM") replacement = target.duty === "Defend" ? "DLP_D" : "DLP_S";
+    else if (target.strata === "AMC") replacement = target.duty === "Attack" ? "AP_AMC_A" : "AP_AMC_S";
     if (!replacement || replacement === target.rid) return null;
 
     var newSlots = JSON.parse(JSON.stringify(slots));

@@ -50,6 +50,12 @@ function isMetaRole(roleId) {
   return !!meta[roleId];
 }
 
+function isWidthProvider(roleId) {
+  var prof = typeof ROLE_PROFILES !== "undefined" ? ROLE_PROFILES[roleId] : null;
+  return !!(prof && prof.movement && (prof.movement.width_drift || 0) >= 0.7);
+}
+
+
 // ─── SECTION 2: PLAYING MENTALITY → TACTIC MENTALITY ───
 
 var MENTALITY_MAP = {
@@ -121,17 +127,17 @@ var FORMATION_FAMILIES = {
 
 // Philosophy ↔ formation compatibility (0 = incoherent, 1 = ideal)
 var FORMATION_PHILOSOPHY_FIT = {
-  "4-3-3 DM":        { pos: 0.95, press: 1.00, def: 0.20, ctr: 0.25, bal: 0.80, psa: 0.75 },
-  "4-2-3-1":         { pos: 0.95, press: 0.30, def: 0.75, ctr: 0.75, bal: 0.95, psa: 0.95 },
-  "4-4-2":           { pos: 0.20, press: 0.70, def: 0.95, ctr: 0.95, bal: 0.95, psa: 0.30 },
-  "4-1-4-1":         { pos: 0.20, press: 0.20, def: 0.95, ctr: 0.75, bal: 0.95, psa: 0.95 },
-  "3-5-2":           { pos: 0.95, press: 0.20, def: 0.95, ctr: 0.25, bal: 0.75, psa: 0.95 },
-  "5-3-2":           { pos: 0.20, press: 0.20, def: 0.95, ctr: 0.95, bal: 0.75, psa: 0.20 },
-  "4-2-4 DM":        { pos: 0.95, press: 0.95, def: 0.20, ctr: 0.95, bal: 0.20, psa: 0.75 },
-  "3-4-3":           { pos: 0.95, press: 0.95, def: 0.20, ctr: 0.25, bal: 0.75, psa: 0.95 },
-  "4-5-1":           { pos: 0.20, press: 0.20, def: 0.95, ctr: 0.75, bal: 0.75, psa: 0.95 },
-  "4-3-2-1":         { pos: 0.95, press: 0.20, def: 0.20, ctr: 0.20, bal: 0.95, psa: 0.75 },
-  "3-4-2-1":         { pos: 0.95, press: 0.75, def: 0.20, ctr: 0.25, bal: 0.75, psa: 0.95 }
+  "4-3-3 DM":        { pos: 0.95, press: 1.00, def: 0.60, ctr: 0.80, bal: 0.90, psa: 0.90 },
+  "4-2-3-1":         { pos: 0.95, press: 0.95, def: 0.70, ctr: 0.85, bal: 0.95, psa: 0.95 },
+  "4-4-2":           { pos: 0.60, press: 0.80, def: 0.95, ctr: 0.95, bal: 0.95, psa: 0.80 },
+  "4-1-4-1":         { pos: 0.80, press: 0.75, def: 0.95, ctr: 0.80, bal: 0.95, psa: 0.95 },
+  "3-5-2":           { pos: 0.90, press: 0.75, def: 0.95, ctr: 0.90, bal: 0.90, psa: 0.90 },
+  "5-3-2":           { pos: 0.70, press: 0.70, def: 0.95, ctr: 0.95, bal: 0.90, psa: 0.80 },
+  "4-2-4 DM":        { pos: 0.70, press: 0.95, def: 0.40, ctr: 0.95, bal: 0.70, psa: 0.75 },
+  "3-4-3":           { pos: 0.95, press: 0.95, def: 0.60, ctr: 0.85, bal: 0.90, psa: 0.90 },
+  "4-5-1":           { pos: 0.60, press: 0.60, def: 0.95, ctr: 0.85, bal: 0.90, psa: 0.90 },
+  "4-3-2-1":         { pos: 0.85, press: 0.75, def: 0.70, ctr: 0.80, bal: 0.90, psa: 0.90 },
+  "3-4-2-1":         { pos: 0.95, press: 0.90, def: 0.70, ctr: 0.85, bal: 0.90, psa: 0.90 }
 };
 
 function getPhilosophyFormationKey(philosophy) {
@@ -380,6 +386,7 @@ function resolveFormation(manager, squad, dna, philosophy) {
 // "what kind of manager picks this role"
 // Replaces old ROLE_BIASES system.
 
+var ORIGINAL_ROLE_PROFILES = typeof ROLE_PROFILES !== "undefined" ? ROLE_PROFILES : {};
 var ROLE_PROFILES = {
   // Goalkeepers
   GK_D: { att: 1, tec: 2, dis: 4, press: 1 },
@@ -501,6 +508,7 @@ var ROLE_PROFILES = {
 function decorateRoleProfiles() {
   Object.keys(ROLE_PROFILES).forEach(function (rid) {
     var base = ROLE_PROFILES[rid];
+    var orig = ORIGINAL_ROLE_PROFILES[rid];
 
     // Default sub-categories
     var movement = { vertical: 0, width_drift: 0, roam: 0.2, hold_position: false, run_beyond_striker: false };
@@ -513,10 +521,25 @@ function decorateRoleProfiles() {
       press_monster: false, roaming: false, holder: false, distributor: false
     };
 
+    if (orig) {
+      if (orig.movement) Object.keys(orig.movement).forEach(function(k) { movement[k] = orig.movement[k]; });
+      if (orig.defensive) Object.keys(orig.defensive).forEach(function(k) { defensive[k] = orig.defensive[k]; });
+      if (orig.attacking) Object.keys(orig.attacking).forEach(function(k) { attacking[k] = orig.attacking[k]; });
+      if (orig.build_up) Object.keys(orig.build_up).forEach(function(k) { build_up[k] = orig.build_up[k]; });
+      if (orig.special) Object.keys(orig.special).forEach(function(k) { special[k] = orig.special[k]; });
+      base.movement = movement;
+      base.defensive = defensive;
+      base.attacking = attacking;
+      base.build_up = build_up;
+      base.special = special;
+      return;
+    }
+
     // Apply rules based on role ID
     var isGK = rid.indexOf("GK") !== -1 || rid.indexOf("SK") !== -1;
     var isCB = rid.indexOf("CD") !== -1 || rid.indexOf("BPD") !== -1 || rid.indexOf("NCB") !== -1 || rid.indexOf("Libero") !== -1 || rid.indexOf("WCB") !== -1;
     var isWideDef = rid === "FB_D" || rid === "FB_S" || rid === "FB_A" || rid === "NFB_D" || rid === "WB_D" || rid === "WB_S" || rid === "WB_A" || rid.indexOf("CWB") !== -1 || rid.indexOf("IWB") !== -1 || rid === "IFB_D";
+    var isWideMid = rid.indexOf("WM") !== -1 || rid.indexOf("DW") !== -1;
     var isDM = rid === "DM_D" || rid === "DM_S" || rid.indexOf("DLP_D") !== -1 || rid.indexOf("BWM_D") !== -1 || rid === "Anchor_D" || rid === "HB_D" || rid === "Regista_S" || rid === "RPM_S" || rid.indexOf("SV") !== -1;
     var isCM = rid.indexOf("CM") !== -1 || rid === "BBM_S" || rid.indexOf("AP_S") !== -1 || rid.indexOf("AP_A") !== -1 || rid.indexOf("Mezzala") !== -1 || rid === "Carrilero_S";
     var isWideAtt = rid.indexOf("Winger") !== -1 || rid.indexOf("IW") !== -1 || rid.indexOf("IF") !== -1 || rid === "RMD_A" || rid.indexOf("WTM") !== -1 || rid.indexOf("AP_WA") !== -1 || rid.indexOf("TQ_WA") !== -1;
@@ -564,23 +587,48 @@ function decorateRoleProfiles() {
       movement.vertical = -0.2;
       defensive.cover_wide = true;
       defensive.cover_central = false;
-      movement.width_drift = 0.5;
-      if (rid.indexOf("IWB") !== -1) {
-        movement.width_drift = -0.8;
-        special.inverted = true;
-      }
-      if (rid.indexOf("CWB") !== -1) {
-        movement.width_drift = 0.8;
+      if (rid === "FB_D" || rid === "NFB_D") movement.width_drift = 0.5;
+      else if (rid === "FB_S") movement.width_drift = 0.6;
+      else if (rid === "FB_A") movement.width_drift = 0.8;
+      else if (rid === "WB_D") movement.width_drift = 0.7;
+      else if (rid === "WB_S") movement.width_drift = 0.8;
+      else if (rid === "WB_A") movement.width_drift = 0.9;
+      else if (rid.indexOf("CWB") !== -1) {
+        movement.width_drift = rid.indexOf("_A") !== -1 ? 0.9 : 0.8;
         movement.roam = 0.6;
         attacking.dribble = 0.8;
+      } else if (rid.indexOf("IWB") !== -1) {
+        movement.width_drift = -0.8;
+        special.inverted = true;
+      } else if (rid === "IFB_D") {
+        movement.width_drift = -0.3;
+        movement.hold_position = true;
+      } else {
+        movement.width_drift = 0.5;
       }
+
       if (rid.indexOf("_A") !== -1) {
         movement.vertical = 0.3;
         movement.run_beyond_striker = true;
       }
-      if (rid === "IFB_D") {
-        movement.width_drift = -0.3;
-        movement.hold_position = true;
+    }
+
+    // Wide Midfielders
+    if (isWideMid) {
+      movement.vertical = 0.1;
+      movement.width_drift = 0.8;
+      defensive.cover_wide = true;
+      defensive.cover_central = false;
+      if (rid.indexOf("IW_WM") !== -1) {
+        movement.width_drift = -0.8;
+        special.inverted = true;
+      }
+      if (rid.indexOf("WP_WM") !== -1) {
+        movement.width_drift = -0.5;
+        special.inverted = true;
+      }
+      if (rid === "WM_D" || rid === "DW_D") {
+        movement.width_drift = 0.7;
       }
     }
 
@@ -786,7 +834,21 @@ function roleScoreForManager(roleId, manager) {
   var propMod = 0.85 + aggression * roleAttShare * 0.3 + (1 - aggression) * (1 - roleAttShare) * 0.3;
   propMod = Math.max(0.7, Math.min(1.3, propMod));
 
-  return baseAffinity * pressCompat * propMod;
+  var score = baseAffinity * pressCompat * propMod;
+
+  // Add deterministic manager-specific preference bias (+/- 12.5%) for extra flavor/quirkiness
+  if (manager && manager.Name) {
+    var nameRoleHash = 0;
+    var nameRoleString = manager.Name + "_" + roleId;
+    for (var k = 0; k < nameRoleString.length; k++) {
+      nameRoleHash = nameRoleString.charCodeAt(k) + ((nameRoleHash << 5) - nameRoleHash);
+    }
+    var roleSeed = Math.abs(nameRoleHash % 100) / 100;
+    var preferenceBias = 0.875 + roleSeed * 0.25;
+    score *= preferenceBias;
+  }
+
+  return score;
 }
 
 
@@ -802,6 +864,7 @@ var getStrataRoleIdsManagerOnly = (function () {
       if (!roleHasStrata(FM24_ROLES[i], strata)) continue;
       if (isAntiMetaRole(FM24_ROLES[i].id)) continue;
       if (!isRoleAllowedForTactic(FM24_ROLES[i].id, null, formation)) continue;
+      if ((strata === "WB" || strata === "WD") && !isWidthProvider(FM24_ROLES[i].id)) continue;
 
       var affinity = roleScoreForManager(FM24_ROLES[i].id, manager);
       var managerWeight = 0.3 + affinity * 0.7;
@@ -826,7 +889,7 @@ var getStrataRoleIdsManagerOnly = (function () {
     var firstPoolSize = Math.min(scored.length, dna.roleExperimentation >= 0.7 ? 5 : dna.roleExperimentation >= 0.4 ? 3 : 2);
     var firstPool = scored.slice(0, firstPoolSize);
     var firstWeights = firstPool.map(function (_, i) { return firstPool.length - i; });
-    var firstChoice = weightedPick(firstPool.map(function (s) { return s.roleId; }), firstWeights);
+    var firstChoice = weightedPick(firstPool.map(function (s) { return s.roleId; }), firstWeights, dna.seed, "strata_first_" + strata);
     var result = [firstChoice];
     var firstRole = getRoleById(firstChoice);
     var firstAbbr = firstRole ? firstRole.abbreviation : "";
@@ -842,6 +905,15 @@ var getStrataRoleIdsManagerOnly = (function () {
       var s = scored[j].score;
       if (role.abbreviation === firstAbbr) s *= 0.5;
       if (role.duty === firstDuty) s *= 0.8;
+      if (strata === "WB" || strata === "WD") {
+        var firstIsWide = isWidthProvider(firstChoice);
+        var thisIsWide = isWidthProvider(rid);
+        if (!firstIsWide && !thisIsWide) {
+          var ca = manager.CA || 100;
+          var caFactor = Math.max(0, (ca - 100) / 100);
+          s *= (1.0 - caFactor * 0.9);
+        }
+      }
       if (s > bestComplementScore) {
         bestComplementScore = s;
         bestComplement = rid;
@@ -859,11 +931,20 @@ var getStrataRoleIdsManagerOnly = (function () {
         var sc = s.score;
         if (r && r.abbreviation === firstAbbr) sc *= 0.5;
         if (r && r.duty === firstDuty) sc *= 0.8;
+        if (strata === "WB" || strata === "WD") {
+          var firstIsWide = isWidthProvider(firstChoice);
+          var thisIsWide = isWidthProvider(s.roleId);
+          if (!firstIsWide && !thisIsWide) {
+            var ca = manager.CA || 100;
+            var caFactor = Math.max(0, (ca - 100) / 100);
+            sc *= (1.0 - caFactor * 0.9);
+          }
+        }
         return { roleId: s.roleId, score: sc };
       });
       compCandidates.sort(function (a, b) { return b.score - a.score; });
       var compWeights = compCandidates.map(function (_, i) { return compCandidates.length - i; });
-      bestComplement = weightedPick(compCandidates.map(function (c) { return c.roleId; }), compWeights);
+      bestComplement = weightedPick(compCandidates.map(function (c) { return c.roleId; }), compWeights, dna.seed, "strata_comp_" + strata);
     }
 
     result.push(bestComplement);
@@ -1059,7 +1140,7 @@ function getMidfieldCombination(manager, dmCount, cmCount, instructions, philoso
   var poolSize = Math.min(scored.length, dna.roleExperimentation >= 0.7 ? 6 : dna.roleExperimentation >= 0.4 ? 4 : 3);
   var pool = scored.slice(0, poolSize);
   var weights = pool.map(function (_, i) { return pool.length - i; });
-  return weightedPick(pool.map(function (s) { return s.combo; }), weights);
+  return weightedPick(pool.map(function (s) { return s.combo; }), weights, dna.seed, "midfield");
 }
 
 // AML/AMR realism: IF/IW dominate; W on one flank max; no AP/RMD in wide attack
@@ -1184,7 +1265,7 @@ var ST_COMBOS = [
   { roles: ["DLF_S", "DLF_A"], ratings: { pos: 0.8, press: 0.6, def: 0.6, ctr: 0.6, bt: 0.8 } }
 ];
 
-function getWDWACombination(manager, formation, instructions, philosophy, dna, flank, otherWaRoleId) {
+function getWDWACombination(manager, formation, instructions, philosophy, dna, flank, otherWaRoleId, leftWidthProviders) {
   if (!dna) dna = getManagerDNA(manager.Name, manager);
   if (!philosophy) philosophy = deriveManagerPhilosophy(manager);
 
@@ -1228,9 +1309,34 @@ function getWDWACombination(manager, formation, instructions, philosophy, dna, f
     var roleScore = roleScoreForManager(combo.wd, manager) * wdm * 0.5 + roleScoreForManager(combo.wa, manager) * wam * 0.5;
     var variety = 0.85 + dna.roleExperimentation * 0.3;
 
+    var isWdWide = getRoleById(combo.wd) && (ROLE_PROFILES[combo.wd].movement.width_drift || 0) >= 0.7;
+    var isWaWide = getRoleById(combo.wa) && (ROLE_PROFILES[combo.wa].movement.width_drift || 0) >= 0.7;
+    var comboWidthProviders = (isWdWide ? 1 : 0) + (isWaWide ? 1 : 0);
+
+    var baseScore = (archScore * 0.5 + roleScore * 0.4 + (variety - 0.85) * 0.5) * realism;
+
+    if (flank === "R" && typeof leftWidthProviders === "number") {
+      var neededWidthProviders = 2 - leftWidthProviders;
+      if (neededWidthProviders > 0 && comboWidthProviders < neededWidthProviders) {
+        var ca = manager.CA || 100;
+        var caFactor = Math.max(0, (ca - 100) / 100);
+        var deficit = neededWidthProviders - comboWidthProviders;
+        baseScore *= (1.0 - caFactor * 0.9 * (deficit / 2.0));
+        baseScore = 0;
+      }
+    } else {
+      var minLeftWidth = isWB ? 1 : 0;
+      if (comboWidthProviders < minLeftWidth) {
+        var ca = manager.CA || 100;
+        var caFactor = Math.max(0, (ca - 100) / 100);
+        baseScore *= (1.0 - caFactor * 0.5);
+        baseScore = 0;
+      }
+    }
+
     return {
       combo: combo,
-      score: (archScore * 0.5 + roleScore * 0.4 + (variety - 0.85) * 0.5) * realism
+      score: baseScore
     };
   });
 
@@ -1238,10 +1344,15 @@ function getWDWACombination(manager, formation, instructions, philosophy, dna, f
 
   if (scored.length === 0) return null;
 
-  var poolSize = Math.min(scored.length, dna.roleExperimentation >= 0.7 ? 6 : dna.roleExperimentation >= 0.4 ? 4 : 3);
-  var pool = scored.slice(0, poolSize);
+  var validScored = scored.filter(function (s) { return s.score > 0; });
+  if (validScored.length === 0) {
+    validScored = scored;
+  }
+
+  var poolSize = Math.min(validScored.length, dna.roleExperimentation >= 0.7 ? 6 : dna.roleExperimentation >= 0.4 ? 4 : 3);
+  var pool = validScored.slice(0, poolSize);
   var weights = pool.map(function (_, i) { return pool.length - i; });
-  return weightedPick(pool.map(function (s) { return s.combo; }), weights);
+  return weightedPick(pool.map(function (s) { return s.combo; }), weights, dna.seed, "wdwa_" + flank);
 }
 
 // Flat-four formations (4-4-2, 4-5-1): FB + ML/MR — W/IW > WM > DW > WP
@@ -1260,7 +1371,7 @@ var FB_WM_COMBOS = [
   { wd: "NFB_D", wm: "WM_S", ratings: { pos: 0.35, press: 0.35, def: 1.0, ctr: 0.9, bt: 0.85 } }
 ];
 
-function getFBWMCombination(manager, formation, instructions, philosophy, dna, flank) {
+function getFBWMCombination(manager, formation, instructions, philosophy, dna, flank, leftWidthProviders) {
   if (!dna) dna = getManagerDNA(manager.Name, manager);
   if (!philosophy) philosophy = deriveManagerPhilosophy(manager);
 
@@ -1275,16 +1386,46 @@ function getFBWMCombination(manager, formation, instructions, philosophy, dna, f
     var roleScore = roleScoreForManager(combo.wd, manager) * wdm * 0.5 +
       roleScoreForManager(combo.wm, manager) * wmm * 0.5;
     var variety = 0.85 + dna.roleExperimentation * 0.3;
-    return { combo: combo, score: (archScore * 0.5 + roleScore * 0.4 + (variety - 0.85) * 0.5) * realism };
+
+    var isWdWide = getRoleById(combo.wd) && (ROLE_PROFILES[combo.wd].movement.width_drift || 0) >= 0.7;
+    var isWmWide = getRoleById(combo.wm) && (ROLE_PROFILES[combo.wm].movement.width_drift || 0) >= 0.7;
+    var comboWidthProviders = (isWdWide ? 1 : 0) + (isWmWide ? 1 : 0);
+
+    var baseScore = (archScore * 0.5 + roleScore * 0.4 + (variety - 0.85) * 0.5) * realism;
+
+    if (flank === "R" && typeof leftWidthProviders === "number") {
+      var neededWidthProviders = 2 - leftWidthProviders;
+      if (neededWidthProviders > 0 && comboWidthProviders < neededWidthProviders) {
+        var ca = manager.CA || 100;
+        var caFactor = Math.max(0, (ca - 100) / 100);
+        var deficit = neededWidthProviders - comboWidthProviders;
+        baseScore *= (1.0 - caFactor * 0.9 * (deficit / 2.0));
+        baseScore = 0;
+      }
+    } else {
+      if (comboWidthProviders < 0) {
+        var ca = manager.CA || 100;
+        var caFactor = Math.max(0, (ca - 100) / 100);
+        baseScore *= (1.0 - caFactor * 0.5);
+        baseScore = 0;
+      }
+    }
+
+    return { combo: combo, score: baseScore };
   });
 
   scored.sort(function (a, b) { return b.score - a.score; });
   if (scored.length === 0) return null;
 
-  var poolSize = Math.min(scored.length, dna.roleExperimentation >= 0.7 ? 5 : dna.roleExperimentation >= 0.4 ? 3 : 2);
-  var pool = scored.slice(0, poolSize);
+  var validScored = scored.filter(function (s) { return s.score > 0; });
+  if (validScored.length === 0) {
+    validScored = scored;
+  }
+
+  var poolSize = Math.min(validScored.length, dna.roleExperimentation >= 0.7 ? 5 : dna.roleExperimentation >= 0.4 ? 3 : 2);
+  var pool = validScored.slice(0, poolSize);
   var weights = pool.map(function (_, i) { return pool.length - i; });
-  return weightedPick(pool.map(function (s) { return s.combo; }), weights);
+  return weightedPick(pool.map(function (s) { return s.combo; }), weights, dna.seed, "fbwm_" + flank);
 }
 
 function getSTCombination(manager, count, philosophy, dna) {
@@ -1326,7 +1467,7 @@ function getSTCombination(manager, count, philosophy, dna) {
   var poolSize = Math.min(scored.length, dna.roleExperimentation >= 0.7 ? 6 : dna.roleExperimentation >= 0.4 ? 4 : 3);
   var pool = scored.slice(0, poolSize);
   var weights = pool.map(function (_, i) { return pool.length - i; });
-  return weightedPick(pool.map(function (s) { return s.combo; }), weights);
+  return weightedPick(pool.map(function (s) { return s.combo; }), weights, dna.seed, "st");
 }
 
 function getCBCombination(manager, count, philosophy, dna, formation) {
@@ -1392,7 +1533,7 @@ function getCBCombination(manager, count, philosophy, dna, formation) {
   var poolSize = Math.min(scored.length, dna.roleExperimentation >= 0.7 ? 6 : dna.roleExperimentation >= 0.4 ? 4 : 3);
   var pool = scored.slice(0, poolSize);
   var weights = pool.map(function (_, i) { return pool.length - i; });
-  return weightedPick(pool.map(function (s) { return s.combo; }), weights);
+  return weightedPick(pool.map(function (s) { return s.combo; }), weights, dna.seed, "cb");
 }
 
 function getStrataRoleIds(manager, strata, count, squad, tacticInstructions, formation, philosophy, dna) {
@@ -1418,7 +1559,10 @@ function getStrataRoleIds(manager, strata, count, squad, tacticInstructions, for
     return getStrataRoleIdsManagerOnly(manager, strata, count, instr, formation, philosophy, dna);
   }
 
-  var strataRoles = FM24_ROLES.filter(function (r) { return roleHasStrata(r, strata) && !isAntiMetaRole(r.id) && isRoleAllowedForTactic(r.id, null, formation); });
+  var strataRoles = FM24_ROLES.filter(function (r) {
+    if ((strata === "WB" || strata === "WD") && !isWidthProvider(r.id)) return false;
+    return roleHasStrata(r, strata) && !isAntiMetaRole(r.id) && isRoleAllowedForTactic(r.id, null, formation);
+  });
   if (strataRoles.length === 0) return [];
 
   var scored = strataRoles.map(function (role) {
@@ -1469,12 +1613,22 @@ function getStrataRoleIds(manager, strata, count, squad, tacticInstructions, for
 
   var bestComplement = null;
   var bestComplementScore = -1;
+  var firstChoice = scored[0].roleId;
   for (var j = 1; j < scored.length; j++) {
     var rid = scored[j].roleId;
     var role = getRoleById(rid);
     if (!role) continue;
     var s = scored[j].score;
     if (role.abbreviation === firstAbbr) s *= 0.5;
+    if (strata === "WB" || strata === "WD") {
+      var firstIsWide = isWidthProvider(firstChoice);
+      var thisIsWide = isWidthProvider(rid);
+      if (!firstIsWide && !thisIsWide) {
+        var ca = manager.CA || 100;
+        var caFactor = Math.max(0, (ca - 100) / 100);
+        s *= (1.0 - caFactor * 0.9);
+      }
+    }
     if (s > bestComplementScore) {
       bestComplementScore = s;
       bestComplement = rid;
@@ -1494,6 +1648,7 @@ function _getStrataRoleIdsPlayerCentric(manager, strata, count, squad, instr, fo
   }
 
   var strataRoles = FM24_ROLES.filter(function (r) {
+    if ((strata === "WB" || strata === "WD") && !isWidthProvider(r.id)) return false;
     return roleHasStrata(r, strata) && !isAntiMetaRole(r.id) && isRoleAllowedForTactic(r.id, null, formation);
   });
   if (strataRoles.length === 0) return [];
@@ -1543,6 +1698,16 @@ function deriveManagerPhilosophy(manager) {
   var pressing = manager["Pressing Style"] || "";
   var pNum = pressing === "More Often" ? 1 : pressing === "Less Often" ? 0 : 0.5;
 
+  var mentalityStr = manager["Playing Mentality"] || "Balanced";
+  var mentVal = 0.5;
+  if (mentalityStr === "Very Cautious") mentVal = 0.1;
+  else if (mentalityStr === "Cautious") mentVal = 0.3;
+  else if (mentalityStr === "Balanced") mentVal = 0.5;
+  else if (mentalityStr === "Attacking") mentVal = 0.75;
+  else if (mentalityStr === "Adventurous") mentVal = 0.95;
+
+  var coachingStyle = manager["Coaching Style"] || "";
+
   var scores = {};
   // Possession: needs high Tec + TacKnw — discipline alone must not trigger this
   scores["possession-oriented tactician"] =
@@ -1571,6 +1736,33 @@ function deriveManagerPhilosophy(manager) {
   // Pragmatic: needs adaptability + broad competence
   scores["pragmatic system-adapter"] =
     ada * 0.35 + tacKnw * 0.25 + dis * 0.15 + tec * 0.15 + men * 0.10;
+
+  // Prioritize attribute profiles over pressing flags
+  if (coachingStyle === "Defending" || coachingStyle === "Mental") {
+    scores["direct counter-attacker"] += 0.05;
+    scores["disciplined defensive organiser"] += 0.05;
+  }
+
+  // Normalise/adjust scores based on manager's actual Playing Mentality DNA
+  if (mentVal <= 0.3) {
+    // Suppress aggressive high press and possession styles
+    scores["aggressive high-press tactician"] *= 0.2;
+    scores["possession-oriented tactician"] *= 0.7;
+    // Boost defensive and counter styles
+    scores["disciplined defensive organiser"] += (1.0 - mentVal) * 0.25;
+    scores["direct counter-attacker"] += (0.8 - mentVal) * 0.15;
+  } else if (mentVal >= 0.7) {
+    // Suppress defensive organiser for attacking/adventurous managers unless they are highly disciplined
+    if (dis < 0.75) {
+      scores["disciplined defensive organiser"] *= 0.3;
+    } else {
+      scores["disciplined defensive organiser"] *= 0.7;
+    }
+    // Mildly boost attacking styles
+    scores["aggressive high-press tactician"] += (mentVal - 0.5) * 0.2;
+    scores["possession-oriented tactician"] += (mentVal - 0.5) * 0.15;
+    scores["direct counter-attacker"] += (mentVal - 0.5) * 0.25;
+  }
 
   var specializedScores = [
     scores["possession-oriented tactician"],
@@ -1604,8 +1796,7 @@ var PHILOSOPHY_PROFILES = {
     instructionOverrides: {
       playOutOfDefence: true,
       workBallIntoBox: true,
-      defensiveLineBehavior: "Standard",
-      preventShortGKDistribution: true
+      defensiveLineBehavior: "Standard"
     },
     instructionVetoes: [
       "shootOnSight", "hitEarlyCrosses", "playForSetPieces", "shootFromDistance"
@@ -1618,13 +1809,14 @@ var PHILOSOPHY_PROFILES = {
       NCB_D: 0.15, NCB_ST: 0.15, NCB_CO: 0.15,
       NFB_D: 0.15,
       Poacher_A: 0.25,
-      PF_D: 0.20
+      PF_D: 0.20,
+      SK_A: 0.3
     },
     roleBoost: {
       BPD_D: 1.4, BPD_ST: 1.3, BPD_CO: 1.3,
       DLP_D: 1.4, DLP_S: 1.4, DLP_CM_D: 1.3, DLP_CM_S: 1.3,
       Regista_S: 1.3,
-      SK_S: 1.3, SK_A: 1.2,
+      SK_S: 1.3, SK_D: 1.25,
       F9_S: 1.3,
       DLF_S: 1.25, DLF_A: 1.2,
       CF_S: 1.2, CF_A: 1.2,
@@ -1639,8 +1831,7 @@ var PHILOSOPHY_PROFILES = {
       whenPossessionWon: "Counter",
       triggerPress: "Much More Often",
       lineOfEngagement: "High",
-      defensiveLine: "Higher",
-      defensiveLineBehavior: "Step Up More"
+      defensiveLine: "Higher"
     },
     instructionVetoes: ["playForSetPieces", "dribbleLess"],
     passingDirectnessMax: 5,
@@ -1648,14 +1839,18 @@ var PHILOSOPHY_PROFILES = {
     roleSuppression: {
       Enganche_S: 0.05, Trequartista_A: 0.10, TQ_WA_A: 0.10,
       RMD_A: 0.15,
-      Anchor_D: 0.25
+      Anchor_D: 0.25,
+      SK_A: 0.7
     },
     roleBoost: {
-      PF_A: 1.2, PF_S: 1.15, PF_D: 1.1,
+      PF_A: 1.15, PF_S: 1.1, PF_D: 1.05,
+      AF_A: 1.15, CF_A: 1.1, CF_S: 1.05,
+      F9_S: 1.05,
       BWM_D: 1.3, BWM_S: 1.3, BWM_CM_D: 1.2, BWM_CM_S: 1.2,
       IF_A: 1.3, IF_S: 1.25, IW_A: 1.2, IW_S: 1.15,
       Winger_A: 1.0, Winger_S: 0.95,
       CD_ST: 1.2, BPD_ST: 1.2,
+      SK_S: 1.25, SK_D: 1.2,
       IW_WM_A: 1.2, IW_WM_S: 1.15, Winger_WM_A: 1.0, Winger_WM_S: 0.95
     }
   },
@@ -1664,13 +1859,11 @@ var PHILOSOPHY_PROFILES = {
       whenPossessionLost: "Regroup",
       whenPossessionWon: "Hold Shape",
       lineOfEngagement: "Mid block",
-      defensiveLine: "Standard",
-      defensiveLineBehavior: "Step Up More",
+      defensiveLine: "Lower",
       creativeFreedom: "More Disciplined",
       defensiveWidth: "Standard",
       crossEngagement: "Stop Crosses",
-      triggerPress: "More Often",
-      tackling: "Get Stuck In"
+      triggerPress: "More Often"
     },
     instructionVetoes: [
       "runAtDefence", "shootOnSight", "shootFromDistance", "passIntoSpace", "playOutOfDefence"
@@ -1681,7 +1874,8 @@ var PHILOSOPHY_PROFILES = {
       Trequartista_A: 0.05, TQ_WA_A: 0.05,
       Enganche_S: 0.10,
       Regista_S: 0.15,
-      SK_A: 0.15,
+      SK_A: 0.05,
+      SK_S: 0.2,
       Mezzala_A: 0.20,
       CWB_A: 0.20
     },
@@ -1703,8 +1897,7 @@ var PHILOSOPHY_PROFILES = {
       tempo: "Higher",
       passIntoSpace: true,
       lineOfEngagement: "Mid block",
-      defensiveLine: "Standard",
-      tackling: "Get Stuck In"
+      defensiveLine: "Standard"
     },
     instructionVetoes: [
       "workBallIntoBox", "playForSetPieces", "dribbleLess", "stayOnFeet", "playOutOfDefence"
@@ -1716,7 +1909,9 @@ var PHILOSOPHY_PROFILES = {
       F9_S: 0.20,
       DLF_S: 0.25,
       Regista_S: 0.20,
-      DLP_D: 0.15, DLP_S: 0.15, DLP_CM_D: 0.15, DLP_CM_S: 0.15
+      DLP_D: 0.15, DLP_S: 0.15, DLP_CM_D: 0.15, DLP_CM_S: 0.15,
+      SK_A: 0.05,
+      SK_S: 0.2
     },
     roleBoost: {
       AF_A: 1.4, Poacher_A: 1.3,
@@ -1906,6 +2101,35 @@ function applyPhilosophyConstraints(instructions, philosophy, manager) {
     }
   }
 
+  // 7. Philosophy-specific line and transition limits for counter-attackers and defensive organisers
+  if (philosophy === "direct counter-attacker" || philosophy === "disciplined defensive organiser") {
+    if (instructions.lineOfEngagement === "High" || instructions.lineOfEngagement === "Much Higher") {
+      instructions.lineOfEngagement = "Mid block";
+    }
+    if (philosophy === "disciplined defensive organiser") {
+      if (instructions.defensiveLine === "Higher" || instructions.defensiveLine === "Much Higher" || instructions.defensiveLine === "Standard") {
+        instructions.defensiveLine = "Lower";
+      }
+    } else {
+      if (instructions.defensiveLine === "Higher" || instructions.defensiveLine === "Much Higher") {
+        instructions.defensiveLine = "Standard";
+      }
+    }
+    if (instructions.whenPossessionLost === "Counter-Press") {
+      instructions.whenPossessionLost = "Regroup";
+    }
+  }
+
+  // 8. Suppress "Step Up More" dangerous combinations (deep blocks should drop or be standard)
+  if (philosophy !== "aggressive high-press tactician") {
+    var dl = instructions.defensiveLine || "Standard";
+    if (dl === "Standard" || dl === "Lower" || dl === "Much Lower") {
+      if (instructions.defensiveLineBehavior === "Step Up More") {
+        delete instructions.defensiveLineBehavior;
+      }
+    }
+  }
+
   return instructions;
 }
 
@@ -2022,7 +2246,13 @@ function generateInstructions(manager) {
   }
 
   // Tackling
-  if ((1 - dis) * 0.4 + att * 0.3 + pNum * 0.3 > 0.4) inst.tackling = "Get Stuck In";
+  var tackleScore = (1 - dis) * 0.4 + att * 0.3 + pNum * 0.3;
+  tackleScore += (dna.intensityBias - 0.5) * 0.1;
+  if (tackleScore > 0.6) {
+    inst.tackling = "Get Stuck In";
+  } else if (tackleScore < 0.35) {
+    inst.tackling = "Stay on feet";
+  }
 
   // Cross Engagement
   var ceScore = mNum * 0.5 + (1 - sta) * 0.3 + dis * 0.2;
@@ -2274,6 +2504,19 @@ function changeRoleDuty(slotId, newDuty, slots, manager) {
   var strata = def ? def.strata : "";
   var newRoleId = getRoleId(role.abbreviation, newDuty, strata);
   if (newRoleId) {
+    var currentIsWidth = isWidthProvider(slot.roleId);
+    var newIsWidth = isWidthProvider(newRoleId);
+    if (currentIsWidth && !newIsWidth) {
+      var totalWidth = 0;
+      Object.keys(slots).forEach(function (sid) {
+        if (slots[sid] && slots[sid].roleId && isWidthProvider(slots[sid].roleId)) {
+          totalWidth++;
+        }
+      });
+      if (totalWidth <= 2) {
+        return false;
+      }
+    }
     slot.roleId = newRoleId;
     slot.duty = newDuty;
     return true;
@@ -3151,7 +3394,7 @@ function enforceMidfieldStructure(slots, manager, squad, instructions) {
   return slots;
 }
 
-function enforceSweeperKeeper(slots, manager, instructions) {
+function enforceSweeperKeeper(slots, manager, instructions, philosophy) {
   if (!slots.GK) return slots;
   var gkRole = getRoleById(slots.GK.roleId);
   if (!gkRole) return slots;
@@ -3163,8 +3406,10 @@ function enforceSweeperKeeper(slots, manager, instructions) {
     var skRoles = ["SK_D", "SK_S", "SK_A"];
     var bestSk = "SK_S";
     var bestScore = -1;
+    if (!philosophy) philosophy = deriveManagerPhilosophy(manager);
     skRoles.forEach(function (skId) {
       var s = roleScoreForManager(skId, manager);
+      s *= philosophyRoleMultiplier(skId, philosophy);
       if (s > bestScore) {
         bestScore = s;
         bestSk = skId;
@@ -3988,13 +4233,7 @@ function enforceTMSupport(slots, manager) {
 // #24b — WIDTH BALANCE CHECK
 function enforceWidthBalance(slots, formation, manager) {
   function isWidthRole(roleId) {
-    if (!roleId) return false;
-    var role = getRoleById(roleId);
-    if (!role) return false;
-    var abbr = role.abbreviation;
-    if (abbr === "W" || abbr === "WM" || abbr === "DW" || abbr === "WB" || abbr === "CWB") return true;
-    if (abbr === "FB" && (role.duty === "Support" || role.duty === "Attack")) return true;
-    return false;
+    return isWidthProvider(roleId);
   }
 
   function isCuttingInside(roleId) {
@@ -4044,18 +4283,32 @@ function enforceWidthBalance(slots, formation, manager) {
       if (slots["WBR"] && slots["WBR"].roleId && isWidthRole(slots["WBR"].roleId)) rightDeep = true;
       if (!leftDeep && !rightDeep) {
         if (slots["DL"] && slots["DL"].roleId) {
-          var fb_s = getRoleId("FB", "Support", "WD");
-          if (fb_s) {
-            slots["DL"].roleId = fb_s;
-            slots["DL"].duty = "Support";
+          var fb_a = getRoleId("FB", "Attack", "WD");
+          if (fb_a) {
+            slots["DL"].roleId = fb_a;
+            slots["DL"].duty = "Attack";
             slots["DL"].playerName = null;
           }
+        } else if (slots["WBL"] && slots["WBL"].roleId) {
+          var wb_s = getRoleId("WB", "Support", "WB");
+          if (wb_s) {
+            slots["WBL"].roleId = wb_s;
+            slots["WBL"].duty = "Support";
+            slots["WBL"].playerName = null;
+          }
         } else if (slots["DR"] && slots["DR"].roleId) {
-          var fb_s_r = getRoleId("FB", "Support", "WD");
-          if (fb_s_r) {
-            slots["DR"].roleId = fb_s_r;
-            slots["DR"].duty = "Support";
+          var fb_a_r = getRoleId("FB", "Attack", "WD");
+          if (fb_a_r) {
+            slots["DR"].roleId = fb_a_r;
+            slots["DR"].duty = "Attack";
             slots["DR"].playerName = null;
+          }
+        } else if (slots["WBR"] && slots["WBR"].roleId) {
+          var wb_s_r = getRoleId("WB", "Support", "WB");
+          if (wb_s_r) {
+            slots["WBR"].roleId = wb_s_r;
+            slots["WBR"].duty = "Support";
+            slots["WBR"].playerName = null;
           }
         }
       }
@@ -5306,14 +5559,11 @@ function reconcileInstructionsWithRoles(slots, instructions, philosophy, manager
 
   if (philosophy === "possession-oriented tactician") {
     if (instructions.whenPossessionLost === undefined) {
-      instructions.whenPossessionLost = "Regroup";
+      instructions.whenPossessionLost = (instructions.mentality === "Defensive" || instructions.mentality === "Cautious") ? "Regroup" : "Counter-Press";
     }
     if (instructions.whenPossessionWon === undefined) {
-      instructions.whenPossessionWon = "Hold Shape";
-    }
-    if (slowPivots >= 1) {
-      instructions.lineOfEngagement = "Mid block";
-      instructions.defensiveLine = "Standard";
+      var dna = getManagerDNA(manager.Name, manager);
+      instructions.whenPossessionWon = (dna.seed > 0.5) ? "Counter" : "Hold Shape";
     }
   } else if (philosophy === "direct counter-attacker") {
     instructions.whenPossessionLost = "Regroup";
@@ -5510,44 +5760,69 @@ function enforceWideRoleVariety(slots, philosophy, dna) {
 }
 
 function enforceMinimumWidth(slots, formation) {
-  function isNaturalWidth(roleId) {
-    if (!roleId) return false;
-    var role = getRoleById(roleId);
-    if (!role) return false;
-    var abbr = role.abbreviation;
-    return abbr === "W" || abbr === "WM" || abbr === "DW" ||
-      abbr === "WB" || abbr === "CWB" ||
-      (abbr === "FB" && (role.duty === "Support" || role.duty === "Attack"));
-  }
+  function ensureFlankWidth(slots, flank) {
+    var flankSlots = flank === "L" ? ["AML", "ML", "WBL", "DL"] : ["AMR", "MR", "WBR", "DR"];
+    var count = 0;
+    var presentSlots = [];
+    flankSlots.forEach(function (sid) {
+      if (slots[sid] && slots[sid].roleId) {
+        presentSlots.push(sid);
+        if (isWidthProvider(slots[sid].roleId)) {
+          count++;
+        }
+      }
+    });
 
-  function isInwardRole(roleId) {
-    if (!roleId) return false;
-    var role = getRoleById(roleId);
-    if (!role) return false;
-    var abbr = role.abbreviation;
-    return abbr === "IF" || abbr === "IW" || abbr === "IWB";
-  }
+    if (presentSlots.length > 0 && count === 0) {
+      var wbSid = flank === "L" ? "WBL" : "WBR";
+      if (slots[wbSid] && slots[wbSid].roleId) {
+        var isAttack = slots[wbSid].duty === "Attack";
+        var replacement = isAttack ? "WB_A" : "WB_S";
+        var roleObj = getRoleById(replacement);
+        slots[wbSid].roleId = replacement;
+        slots[wbSid].duty = roleObj ? roleObj.duty : slots[wbSid].duty;
+        slots[wbSid].playerName = null;
+        return true;
+      }
 
-  ["L", "R"].forEach(function (flank) {
-    var waSid = flank === "L" ? "AML" : "AMR";
-    var wdSid = flank === "L" ? "DL" : "DR";
-    var wbSid = flank === "L" ? "WBL" : "WBR";
-    var waRole = slots[waSid] ? slots[waSid].roleId : null;
-    var wdRole = (slots[wdSid] && slots[wdSid].roleId) || (slots[wbSid] && slots[wbSid].roleId);
-    if (!waRole) return;
-    if (!isInwardRole(waRole)) return;
-    if (isNaturalWidth(wdRole)) return;
-    if (isInwardRole(wdRole)) {
-      var strata = slots[wbSid] && slots[wbSid].roleId ? "WB" : "WD";
-      var targetSid = slots[wbSid] && slots[wbSid].roleId ? wbSid : wdSid;
-      var fb_s = getRoleId("FB", "Support", strata);
-      if (fb_s && slots[targetSid]) {
-        slots[targetSid].roleId = fb_s;
-        slots[targetSid].duty = "Support";
-        slots[targetSid].playerName = null;
+      var wdSid = flank === "L" ? "DL" : "DR";
+      if (slots[wdSid] && slots[wdSid].roleId) {
+        var isAttack = slots[wdSid].duty === "Attack";
+        var replacement = isAttack ? "FB_A" : "WB_S";
+        var roleObj = getRoleById(replacement);
+        slots[wdSid].roleId = replacement;
+        slots[wdSid].duty = roleObj ? roleObj.duty : slots[wdSid].duty;
+        slots[wdSid].playerName = null;
+        return true;
+      }
+
+      var wmSid = flank === "L" ? "ML" : "MR";
+      if (slots[wmSid] && slots[wmSid].roleId) {
+        var isAttack = slots[wmSid].duty === "Attack";
+        var replacement = isAttack ? "Winger_WM_A" : "Winger_WM_S";
+        var roleObj = getRoleById(replacement);
+        slots[wmSid].roleId = replacement;
+        slots[wmSid].duty = roleObj ? roleObj.duty : slots[wmSid].duty;
+        slots[wmSid].playerName = null;
+        return true;
+      }
+
+      var waSid = flank === "L" ? "AML" : "AMR";
+      if (slots[waSid] && slots[waSid].roleId) {
+        var isAttack = slots[waSid].duty === "Attack";
+        var replacement = isAttack ? "Winger_A" : "Winger_S";
+        var roleObj = getRoleById(replacement);
+        slots[waSid].roleId = replacement;
+        slots[waSid].duty = roleObj ? roleObj.duty : slots[waSid].duty;
+        slots[waSid].playerName = null;
+        return true;
       }
     }
-  });
+    return false;
+  }
+
+  ensureFlankWidth(slots, "L");
+  ensureFlankWidth(slots, "R");
 
   return slots;
 }
@@ -5707,15 +5982,37 @@ function deriveGKDistribution(manager, instructions, slots, philosophy) {
   } else if (philosophy === "possession-oriented tactician") {
     instructions.gkDistributionMethod = "Take Short Kicks";
     instructions.gkDistributionPace = dis > 0.55 ? "Distribute Slowly" : "Normal";
-    instructions.gkDistributionTarget = dna.seed > 0.5 ? "Centre-Backs" : "Full-Backs";
+    if (dna.seed > 0.75) {
+      instructions.gkDistributionTarget = "Playmaker";
+    } else if (dna.seed > 0.5) {
+      instructions.gkDistributionTarget = "Defensive Midfielder";
+    } else if (dna.seed > 0.25) {
+      instructions.gkDistributionTarget = "Centre-Backs";
+    } else {
+      instructions.gkDistributionTarget = "Full-Backs";
+    }
   } else if (philosophy === "disciplined defensive organiser") {
     instructions.gkDistributionMethod = "Roll It Out";
     instructions.gkDistributionPace = "Normal";
-    instructions.gkDistributionTarget = dna.seed > 0.5 ? "Centre-Backs" : "Full-Backs";
+    if (dna.seed > 0.8) {
+      instructions.gkDistributionTarget = "Defensive Midfielder";
+    } else if (dna.seed > 0.4) {
+      instructions.gkDistributionTarget = "Centre-Backs";
+    } else {
+      instructions.gkDistributionTarget = "Full-Backs";
+    }
   } else if (philosophy === "aggressive high-press tactician") {
     instructions.gkDistributionPace = "Distribute Quickly";
     instructions.gkDistributionMethod = dna.seed > 0.4 ? "Take Short Kicks" : "Mixed";
-    instructions.gkDistributionTarget = dna.seed > 0.5 ? "Wide Players" : "Central Defenders";
+    if (dna.seed > 0.75) {
+      instructions.gkDistributionTarget = "Playmaker";
+    } else if (dna.seed > 0.5) {
+      instructions.gkDistributionTarget = "Wide Players";
+    } else if (dna.seed > 0.25) {
+      instructions.gkDistributionTarget = "Full-Backs";
+    } else {
+      instructions.gkDistributionTarget = "Centre-Backs";
+    }
   } else {
     // Balanced / pragmatic — attribute-driven with DNA variety
     if (instructions.playOutOfDefence) {
@@ -5732,7 +6029,7 @@ function deriveGKDistribution(manager, instructions, slots, philosophy) {
     } else {
       instructions.gkDistributionPace = "Normal";
     }
-    var targets = ["Wide Players", "Full-Backs", "Centre-Backs", "Target Forward"];
+    var targets = ["Centre-Backs", "Full-Backs", "Defensive Midfielder", "Target Forward", "Playmaker", "Wide Players"];
     instructions.gkDistributionTarget = targets[Math.floor(dna.seed * targets.length) % targets.length];
   }
 
@@ -5768,12 +6065,25 @@ var DEFAULT_DUTY = {
   WA: "Support", AMC: "Support", ST: "Attack"
 };
 
-function weightedPick(items, weights) {
+function weightedPick(items, weights, seed, salt) {
   if (!items || items.length === 0) return null;
   if (items.length === 1) return items[0];
+
+  var r;
+  if (seed !== undefined && seed !== null) {
+    var str = seed.toString() + (salt || "");
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    r = (Math.abs(hash & 0x7FFFFFFF) / 0x7FFFFFFF);
+  } else {
+    r = Math.random();
+  }
+
   var total = 0;
   for (var i = 0; i < weights.length; i++) total += weights[i];
-  var r = Math.random() * total;
+  r = r * total;
   var accumulated = 0;
   for (var j = 0; j < items.length; j++) {
     accumulated += weights[j];
@@ -5920,7 +6230,12 @@ function generateTacticFromManager(manager, squad) {
 
   if (rightWDslot && rightWA.length > 0) {
     var otherWaLeft = (leftWA.length > 0 && slots[leftWA[0]]) ? slots[leftWA[0]].roleId : null;
-    var rightCombo = getWDWACombination(manager, formation, instructions, philosophy, dna, "R", otherWaLeft);
+    var leftWDroleId = (leftWDslot && slots[leftWDslot]) ? slots[leftWDslot].roleId : null;
+    var leftWidthProviders = 0;
+    if (leftWDroleId && isWidthProvider(leftWDroleId)) leftWidthProviders++;
+    if (otherWaLeft && isWidthProvider(otherWaLeft)) leftWidthProviders++;
+
+    var rightCombo = getWDWACombination(manager, formation, instructions, philosophy, dna, "R", otherWaLeft, leftWidthProviders);
     if (rightCombo) {
       var wdRole = getRoleById(rightCombo.wd);
       slots[rightWDslot] = { roleId: rightCombo.wd, duty: wdRole ? wdRole.duty : null, playerName: null };
@@ -5949,7 +6264,13 @@ function generateTacticFromManager(manager, squad) {
       }
     }
     if (rightFB && rightWM.length > 0 && !slots[rightWM[0]]) {
-      var rightFbWm = getFBWMCombination(manager, formation, instructions, philosophy, dna, "R");
+      var leftWDroleId = slots[leftFB] ? slots[leftFB].roleId : null;
+      var leftWMroleId = slots[leftWM[0]] ? slots[leftWM[0]].roleId : null;
+      var leftWidthProviders = 0;
+      if (leftWDroleId && isWidthProvider(leftWDroleId)) leftWidthProviders++;
+      if (leftWMroleId && isWidthProvider(leftWMroleId)) leftWidthProviders++;
+
+      var rightFbWm = getFBWMCombination(manager, formation, instructions, philosophy, dna, "R", leftWidthProviders);
       if (rightFbWm) {
         if (!slots[rightFB]) {
           var rfbRole = getRoleById(rightFbWm.wd);
@@ -6172,7 +6493,7 @@ function runFullPipeline(slots, manager, squad, formation, instructions, philoso
   // ══════════════════════════════════════════════
   instructions = applyPhilosophyConstraints(instructions, philosophy, manager);
   instructions = validateInstructions(instructions, manager);
-  slots = enforceSweeperKeeper(slots, manager, instructions);
+  slots = enforceSweeperKeeper(slots, manager, instructions, philosophy);
   slots = enforceCenterbackDuties(slots, manager);
 
   // ══════════════════════════════════════════════
@@ -6376,7 +6697,7 @@ function getValidRolesForStrata(strata, philosophy) {
   return allowed;
 }
 
-function mutateSlotRole(slots, slotId, philosophy, formation) {
+function mutateSlotRole(slots, slotId, philosophy, formation, dna, iteration) {
   var slotDef = slots[slotId];
   if (!slotDef) return;
   var def = GLOBAL_PITCH_SLOTS[slotId];
@@ -6399,7 +6720,9 @@ function mutateSlotRole(slots, slotId, philosophy, formation) {
       return roleBoost[r.id] || 1.0;
     });
 
-    var picked = weightedPick(otherCandidates, weights);
+    var seed = dna ? dna.seed : 12345;
+    var salt = "mutate_" + slotId + "_" + (iteration || 0);
+    var picked = weightedPick(otherCandidates, weights, seed, salt);
     if (picked) {
       slots[slotId].roleId = picked.id;
       slots[slotId].duty = picked.duty;
@@ -6436,7 +6759,7 @@ function createTemplateVariant(slots, coherenceResult, formation, philosophy, dn
       if (prof && prof.special && prof.special.distributor) pmSlots.push(sid);
     });
     if (pmSlots.length > 1) {
-      mutateSlotRole(newSlots, pmSlots[0], philosophy, formation);
+      mutateSlotRole(newSlots, pmSlots[0], philosophy, formation, dna, iteration);
       mutated = true;
     }
 
@@ -6594,7 +6917,7 @@ function createTemplateVariant(slots, coherenceResult, formation, philosophy, dn
       }
     });
     if (suppressedSlots.length > 0) {
-      mutateSlotRole(newSlots, suppressedSlots[0], philosophy, formation);
+      mutateSlotRole(newSlots, suppressedSlots[0], philosophy, formation, dna, iteration);
       mutated = true;
     }
   }
@@ -6604,7 +6927,7 @@ function createTemplateVariant(slots, coherenceResult, formation, philosophy, dn
     if (allSlots.length > 0) {
       var seedInt = Math.floor(dna.seed * 1000) + iteration;
       var randomSlot = allSlots[seedInt % allSlots.length];
-      mutateSlotRole(newSlots, randomSlot, philosophy, formation);
+      mutateSlotRole(newSlots, randomSlot, philosophy, formation, dna, iteration);
     }
   }
 
@@ -6794,7 +7117,12 @@ function generateTacticFromTemplate(template, manager, squad) {
 
     if (rightWDslot && rightWA.length > 0) {
       var otherWaLeftT = (leftWA.length > 0 && slots[leftWA[0]]) ? slots[leftWA[0]].roleId : null;
-      var rightCombo = getWDWACombination(manager, formation, instructions, philosophy, dna, "R", otherWaLeftT);
+      var leftWDroleIdT = (leftWDslot && slots[leftWDslot]) ? slots[leftWDslot].roleId : null;
+      var leftWidthProvidersT = 0;
+      if (leftWDroleIdT && isWidthProvider(leftWDroleIdT)) leftWidthProvidersT++;
+      if (otherWaLeftT && isWidthProvider(otherWaLeftT)) leftWidthProvidersT++;
+
+      var rightCombo = getWDWACombination(manager, formation, instructions, philosophy, dna, "R", otherWaLeftT, leftWidthProvidersT);
       if (rightCombo) {
         var wdRole = getRoleById(rightCombo.wd);
         slots[rightWDslot] = { roleId: rightCombo.wd, duty: wdRole ? wdRole.duty : null, playerName: null };
@@ -6919,6 +7247,16 @@ function findBestTacticFromTemplate(template, manager, squad) {
 
     var result = runFullPipeline(mutatedSlots, manager, squad, formation, bestTactic.instructions, philosophy, dna);
     if (!result) continue;
+
+    var widthProvidersCount = 0;
+    Object.keys(result.slots).forEach(function (sid) {
+      if (result.slots[sid] && result.slots[sid].roleId && isWidthProvider(result.slots[sid].roleId)) {
+        widthProvidersCount++;
+      }
+    });
+    if (widthProvidersCount < 2) {
+      continue;
+    }
 
     var newScore = result.coherence ? result.coherence.final : 0;
 
