@@ -297,7 +297,8 @@ function resolveFormation(manager, squad, dna, philosophy) {
   // DNA-driven formation variety
   var formKeys = Object.keys(scores);
   var jitterIdx = Math.floor(dna.seed * formKeys.length) % formKeys.length;
-  scores[formKeys[jitterIdx]] *= 1.06;
+  var jitterAmount = 1.05 + dna.roleExperimentation * 0.30;
+  scores[formKeys[jitterIdx]] *= jitterAmount;
   if (dna.formationLoyalty > 0.65 && mappedPreferred && VALID_FORMATIONS[mappedPreferred]) {
     var prefPhilFit = getFormationPhilosophyFit(mappedPreferred, philosophy);
     if (prefPhilFit >= 0.45) {
@@ -799,6 +800,16 @@ function getManagerDNA(managerName, manager) {
   };
 }
 
+function getDeterministicFloat(seed, salt, manager) {
+  var str = (seed !== undefined && seed !== null ? seed.toString() : "") + (salt || "");
+  if (manager) str += (manager.Nat || "") + String(manager.Age || manager["D.O.B"] || 0);
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash & 0x7FFFFFFF) / 0x7FFFFFFF;
+}
+
 function getAggressionPropensity(manager) {
   var att = normalizeAttr(manager.Att || 10);
   var dis = normalizeAttr(manager.Dis || 10);
@@ -871,7 +882,7 @@ var getStrataRoleIdsManagerOnly = (function () {
       var roleVariety = 0.85 + dna.roleExperimentation * 0.3;
       var context = contextMultiplier(FM24_ROLES[i].id, manager, instr, formation);
       var metaPref = isMetaRole(FM24_ROLES[i].id) ? (0.85 + dna.metaPreference * 0.3) : 1.0;
-      var philMult = philosophy ? philosophyRoleMultiplier(FM24_ROLES[i].id, philosophy) : 1.0;
+      var philMult = philosophy ? philosophyRoleMultiplier(FM24_ROLES[i].id, philosophy, manager) : 1.0;
       var realismMult = 1.0;
       if (strata === "WM") {
         realismMult = wmRealismMultiplier(FM24_ROLES[i].id);
@@ -1112,7 +1123,7 @@ function getMidfieldCombination(manager, dmCount, cmCount, instructions, philoso
     var allRoles = combo.dm.concat(combo.cm);
     var roleScore = 0;
     allRoles.forEach(function (rid) {
-      var mult = philosophy ? philosophyRoleMultiplier(rid, philosophy) : 1.0;
+      var mult = philosophy ? philosophyRoleMultiplier(rid, philosophy, manager) : 1.0;
       roleScore += roleScoreForManager(rid, manager) * mult;
     });
     if (allRoles.length > 0) roleScore /= allRoles.length;
@@ -1303,8 +1314,8 @@ function getWDWACombination(manager, formation, instructions, philosophy, dna, f
       archScore = combo.ratings[philKey] !== undefined ? combo.ratings[philKey] : 0.6;
     }
 
-    var wdm = philosophy ? philosophyRoleMultiplier(combo.wd, philosophy) : 1.0;
-    var wam = philosophy ? philosophyRoleMultiplier(combo.wa, philosophy) : 1.0;
+    var wdm = philosophy ? philosophyRoleMultiplier(combo.wd, philosophy, manager) : 1.0;
+    var wam = philosophy ? philosophyRoleMultiplier(combo.wa, philosophy, manager) : 1.0;
     var realism = waRealismMultiplier(combo.wa, otherWaRoleId);
     var roleScore = roleScoreForManager(combo.wd, manager) * wdm * 0.5 + roleScoreForManager(combo.wa, manager) * wam * 0.5;
     var variety = 0.85 + dna.roleExperimentation * 0.3;
@@ -1380,8 +1391,8 @@ function getFBWMCombination(manager, formation, instructions, philosophy, dna, f
 
   var scored = FB_WM_COMBOS.map(function (combo) {
     var archScore = combo.ratings[philKey] !== undefined ? combo.ratings[philKey] : 0.6;
-    var wdm = philosophy ? philosophyRoleMultiplier(combo.wd, philosophy) : 1.0;
-    var wmm = philosophy ? philosophyRoleMultiplier(combo.wm, philosophy) : 1.0;
+    var wdm = philosophy ? philosophyRoleMultiplier(combo.wd, philosophy, manager) : 1.0;
+    var wmm = philosophy ? philosophyRoleMultiplier(combo.wm, philosophy, manager) : 1.0;
     var realism = wmRealismMultiplier(combo.wm);
     var roleScore = roleScoreForManager(combo.wd, manager) * wdm * 0.5 +
       roleScoreForManager(combo.wm, manager) * wmm * 0.5;
@@ -1449,8 +1460,8 @@ function getSTCombination(manager, count, philosophy, dna) {
       archScore = combo.ratings[philKey] !== undefined ? combo.ratings[philKey] : 0.6;
     }
 
-    var r1m = philosophy ? philosophyRoleMultiplier(combo.roles[0], philosophy) : 1.0;
-    var r2m = philosophy ? philosophyRoleMultiplier(combo.roles[1], philosophy) : 1.0;
+    var r1m = philosophy ? philosophyRoleMultiplier(combo.roles[0], philosophy, manager) : 1.0;
+    var r2m = philosophy ? philosophyRoleMultiplier(combo.roles[1], philosophy, manager) : 1.0;
     var roleScore = roleScoreForManager(combo.roles[0], manager) * r1m * 0.5 + roleScoreForManager(combo.roles[1], manager) * r2m * 0.5;
     var variety = 0.85 + dna.roleExperimentation * 0.3;
 
@@ -1512,7 +1523,7 @@ function getCBCombination(manager, count, philosophy, dna, formation) {
 
     var roleScore = 0;
     combo.roles.forEach(function (rid) {
-      var mult = philosophy ? philosophyRoleMultiplier(rid, philosophy) : 1.0;
+      var mult = philosophy ? philosophyRoleMultiplier(rid, philosophy, manager) : 1.0;
       roleScore += roleScoreForManager(rid, manager) * mult;
     });
     if (combo.roles.length > 0) roleScore /= combo.roles.length;
@@ -1586,7 +1597,7 @@ function getStrataRoleIds(manager, strata, count, squad, tacticInstructions, for
     }
 
     var context = contextMultiplier(role.id, manager, instr, formation);
-    var philMult = philosophy ? philosophyRoleMultiplier(role.id, philosophy) : 1.0;
+    var philMult = philosophy ? philosophyRoleMultiplier(role.id, philosophy, manager) : 1.0;
     var metaPref = isMetaRole(role.id) ? (0.85 + dna.metaPreference * 0.3) : 1.0;
     var realismMult = 1.0;
     if (strata === "WM") {
@@ -2009,17 +2020,6 @@ function applyPhilosophyConstraints(instructions, philosophy, manager) {
   var rigidity = 0.5 + 0.3 * discipline - 0.3 * adaptability - 0.2 * dna.roleExperimentation;
   rigidity = Math.max(0.1, Math.min(0.9, rigidity));
 
-  // Helper function for deterministic float [0, 1) based on DNA seed and string key
-  function getDeterministicFloat(seed, salt, manager) {
-    var str = seed.toString() + salt;
-    if (manager) str += (manager.Nat || "") + String(manager.Age || 0);
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash & 0x7FFFFFFF) / 0x7FFFFFFF;
-  }
-
   // 1. Dynamic Attribute-Driven Vetoes via style vector similarity
   if (instructions && archetypeVec) {
     var vetoThreshold = 0.25 + 0.15 * discipline - 0.20 * adaptability;
@@ -2133,12 +2133,21 @@ function applyPhilosophyConstraints(instructions, philosophy, manager) {
   return instructions;
 }
 
-function philosophyRoleMultiplier(roleId, philosophy) {
+function philosophyRoleMultiplier(roleId, philosophy, manager) {
   var profile = PHILOSOPHY_PROFILES[philosophy];
-  if (!profile) return 1.0;
-  if (profile.roleSuppression[roleId] !== undefined) return profile.roleSuppression[roleId];
-  if (profile.roleBoost[roleId] !== undefined) return profile.roleBoost[roleId];
-  return 1.0;
+  var baseMult = 1.0;
+  if (profile) {
+    if (profile.roleSuppression[roleId] !== undefined) baseMult = profile.roleSuppression[roleId];
+    else if (profile.roleBoost[roleId] !== undefined) baseMult = profile.roleBoost[roleId];
+  }
+  if (manager) {
+    var dna = getManagerDNA(manager.Name, manager);
+    var rand = getDeterministicFloat(dna.seed, "role_pref_" + roleId, manager);
+    var maxDev = 0.10 + (dna.roleExperimentation || 0.5) * 0.25;
+    var dev = (rand - 0.5) * 2 * maxDev;
+    baseMult *= (1.0 + dev);
+  }
+  return baseMult;
 }
 
 // ─── SECTION 6: INSTRUCTION GENERATION ───
@@ -2166,6 +2175,7 @@ function generateInstructions(manager) {
 
   // Attacking Width
   var widthScore = att * 0.4 + dis * 0.2 + (1 - tacKnw) * 0.2 + ada * 0.2;
+  widthScore += (dna.flankBias - 0.5) * 0.18;
   if (widthScore > 0.7) inst.attackingWidth = "Wide";
   else if (widthScore > 0.55) inst.attackingWidth = "Fairly Wide";
   else if (widthScore < 0.3) inst.attackingWidth = "Narrow";
@@ -2173,30 +2183,41 @@ function generateInstructions(manager) {
 
   // Passing Directness
   var passScore = (1 - tec) * 0.35 + (1 - att) * 0.25 + dis * 0.25 + ada * 0.15;
+  passScore += (dna.riskTolerance - 0.5) * 0.18;
   if (passScore > 0.5) inst.passingDirectness = "Much More Direct";
   else if (passScore > 0.35) inst.passingDirectness = "More Direct";
   else if (passScore < 0.25) inst.passingDirectness = "Shorter";
 
   // Tempo
   var tempoScore = att * 0.35 + tacKnw * 0.25 + (1 - dis) * 0.2 + ada * 0.2;
+  tempoScore += (dna.intensityBias - 0.5) * 0.18;
   if (tempoScore > 0.65) inst.tempo = "Much Higher";
   else if (tempoScore > 0.5) inst.tempo = "Higher";
   else if (tempoScore < 0.35) inst.tempo = "Lower";
 
   // Pass Into Space
-  if (att * 0.4 + men * 0.3 + ada * 0.3 > 0.5) inst.passIntoSpace = true;
+  var pisScore = att * 0.4 + men * 0.3 + ada * 0.3;
+  pisScore += (dna.riskTolerance - 0.5) * 0.18;
+  if (pisScore > 0.5) inst.passIntoSpace = true;
 
   // Work Ball Into Box
-  if (tec * 0.4 + tacKnw * 0.3 + dis * 0.3 > 0.5) inst.workBallIntoBox = true;
+  var wbbScore = tec * 0.4 + tacKnw * 0.3 + dis * 0.3;
+  wbbScore += (1.0 - dna.riskTolerance - 0.5) * 0.18;
+  if (wbbScore > 0.5) inst.workBallIntoBox = true;
 
   // Play Out of Defence
-  if (tec * 0.5 + tacKnw * 0.3 + att * 0.2 > 0.45) inst.playOutOfDefence = true;
+  var podScore = tec * 0.5 + tacKnw * 0.3 + att * 0.2;
+  podScore += (1.0 - dna.riskTolerance - 0.5) * 0.18;
+  if (podScore > 0.45) inst.playOutOfDefence = true;
 
   // Run At Defence
-  if (att * 0.5 + men * 0.3 + (1 - tacKnw) * 0.2 > 0.5) inst.runAtDefence = true;
+  var radScore = att * 0.5 + men * 0.3 + (1 - tacKnw) * 0.2;
+  radScore += (dna.riskTolerance - 0.5) * 0.18;
+  if (radScore > 0.5) inst.runAtDefence = true;
 
   // Creative Freedom
   var cfScore = men * 0.4 - dis * 0.3 + tec * 0.2 + 0.3;
+  cfScore += (dna.roleExperimentation - 0.5) * 0.18;
   if (cfScore > 0.6) inst.creativeFreedom = "More Expressive";
   else if (cfScore < 0.4) inst.creativeFreedom = "More Disciplined";
 
@@ -2204,19 +2225,19 @@ function generateInstructions(manager) {
   var mentVal = inst.mentality === "Attacking" ? 1.0 : inst.mentality === "Positive" ? 0.8 : inst.mentality === "Balanced" ? 0.5 : inst.mentality === "Cautious" ? 0.2 : 0.0;
 
   var loeScore = att * 0.2 + mentVal * 0.3 + pNum * 0.3 + tacKnw * 0.2;
-  loeScore += (dna.intensityBias - 0.5) * 0.08;
+  loeScore += (dna.intensityBias - 0.5) * 0.18;
   if (loeScore > 0.55) inst.lineOfEngagement = "High";
   else inst.lineOfEngagement = "Mid block";
 
   // Defensive Line
   var dlScore = att * 0.2 + mentVal * 0.3 + pNum * 0.3 + tacKnw * 0.2;
-  dlScore += (dna.intensityBias - 0.5) * 0.08;
+  dlScore += (dna.intensityBias - 0.5) * 0.18;
   if (dlScore > 0.55) inst.defensiveLine = "Higher";
   else inst.defensiveLine = "Standard";
 
   // Trigger Press
   var tpScore = pNum * 0.5 + att * 0.25 + tacKnw * 0.25;
-  tpScore += (dna.intensityBias - 0.5) * 0.08;
+  tpScore += (dna.intensityBias - 0.5) * 0.18;
   if (tpScore > 0.7) inst.triggerPress = "Much More Often";
   else if (tpScore > 0.5) inst.triggerPress = "More Often";
   else inst.triggerPress = "Standard";
@@ -2224,7 +2245,7 @@ function generateInstructions(manager) {
   // Counter-Press (whenPossessionLost)
   // Weighting: 40% Pressing Style, 30% Mentality, 20% Attacking instinct, 10% Tactical Knowledge
   var cpScore = pNum * 0.4 + mentVal * 0.3 + att * 0.2 + tacKnw * 0.1;
-  cpScore += (dna.intensityBias - 0.5) * 0.05;
+  cpScore += (dna.intensityBias - 0.5) * 0.15;
   if (mentVal >= 0.5 && pNum >= 0.5) {
     // Mentality is not defensive or cautious (Balanced, Positive, Attacking)
     // and pressing style is not passive (Balanced, More Often, Much More Often)
@@ -3409,7 +3430,7 @@ function enforceSweeperKeeper(slots, manager, instructions, philosophy) {
     if (!philosophy) philosophy = deriveManagerPhilosophy(manager);
     skRoles.forEach(function (skId) {
       var s = roleScoreForManager(skId, manager);
-      s *= philosophyRoleMultiplier(skId, philosophy);
+      s *= philosophyRoleMultiplier(skId, philosophy, manager);
       if (s > bestScore) {
         bestScore = s;
         bestSk = skId;
@@ -3945,8 +3966,8 @@ function getBestFixDirection(slotA_id, slotB_id, slots, strata_A, strata_B, tabl
   if (!altA) return "B";
   if (!altB) return "A";
 
-  var scoreAlt_A = roleScoreForManager(altA, manager) * philosophyRoleMultiplier(altA, philosophy);
-  var scoreAlt_B = roleScoreForManager(altB, manager) * philosophyRoleMultiplier(altB, philosophy);
+  var scoreAlt_A = roleScoreForManager(altA, manager) * philosophyRoleMultiplier(altA, philosophy, manager);
+  var scoreAlt_B = roleScoreForManager(altB, manager) * philosophyRoleMultiplier(altB, philosophy, manager);
 
   return scoreAlt_A > scoreAlt_B ? "A" : "B";
 }
@@ -6989,7 +7010,7 @@ function customizeTemplateSlots(templateSlots, manager, instructions, formation,
       var affinity = roleScoreForManager(cand.id, manager);
       var managerWeight = 0.3 + affinity * 0.7;
       var context = contextMultiplier(cand.id, manager, instructions, formation);
-      var philMult = philosophy ? philosophyRoleMultiplier(cand.id, philosophy) : 1.0;
+      var philMult = philosophy ? philosophyRoleMultiplier(cand.id, philosophy, manager) : 1.0;
       var metaPref = isMetaRole(cand.id) ? (0.85 + dna.metaPreference * 0.3) : 1.0;
       var mgrPref = managerWeight * context * philMult * metaPref;
 
