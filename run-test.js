@@ -20,7 +20,7 @@ global.document = {
   addEventListener: function() {},
   querySelectorAll: function() { return []; },
   getElementById: function() { return null; },
-  documentElement: { style: {} },
+  documentElement: { style: {}, classList: { add: function() {}, remove: function() {}, contains: function() { return false; } } },
   body: { appendChild: function() {}, classList: { add: function() {}, remove: function() {} } },
   head: { appendChild: function() {} },
   querySelector: function() { return null; }
@@ -60,6 +60,11 @@ var scriptOrder = [
   "modules/wonderkid.js",
   "data/manager-engine.js",
   "modules/managerEval.js",
+  "modules/playerUtils.js",
+  "modules/boardMandate.js",
+  "modules/transferClubs.js",
+  "modules/incomingBids.js",
+  "modules/transferWindowV2.js",
   "modules/manager.js",
   "modules/save.js",
   "app.js"

@@ -228,12 +228,12 @@
     var minDefend = 3, maxDefend = 5;
     var minAttack = 2, maxAttack = 4;
 
-    if (p === "disciplined defensive organiser" || p === "direct counter-attacker") {
+    if (p === "disciplined defensive organiser" || p === "direct counter-attacker" || p === "wide-oriented direct play") {
       minDefend = 3;
       maxDefend = 6;
       minAttack = 1;
       maxAttack = 3;
-    } else if (p === "possession-oriented tactician") {
+    } else if (p === "possession-oriented tactician" || p === "positional play specialist") {
       minDefend = 2;
       maxDefend = 4;
       minAttack = 2;
@@ -395,7 +395,7 @@
       }
     });
 
-    if (p === "possession-oriented tactician") {
+    if (p === "possession-oriented tactician" || p === "positional play specialist") {
       // Possession needs controller, playmaker, and wide expansion
       if (covDetails.midfieldController) {
         covScore += 25;
@@ -484,6 +484,28 @@
       if (covDetails.widthR) covScore += 10;
 
       // Playmakers / Controllers are optional (no warning if missing, but boost if present)
+      if (covDetails.midfieldController) covScore += 5;
+      if (covDetails.chanceCreator) covScore += 5;
+    } else if (p === "wide-oriented direct play") {
+      covScore = 20; // Medium base
+      if (covDetails.defensiveShield) {
+        covScore += 20;
+      } else {
+        warnings.push("Wide direct play style needs a defensive shield or anchor to secure possession transitions");
+      }
+
+      if (covDetails.boxThreat) {
+        covScore += 25;
+      } else {
+        warnings.push("Wide direct play style needs an attacking target/runner in the box");
+      }
+
+      if (covDetails.widthL && covDetails.widthR) {
+        covScore += 25;
+      } else {
+        warnings.push("Wide direct play requires active wide options on both flanks (Wingers, Full Backs, or Wing Backs)");
+      }
+
       if (covDetails.midfieldController) covScore += 5;
       if (covDetails.chanceCreator) covScore += 5;
     } else {
@@ -577,7 +599,7 @@
     var zoneWeight = 0.15;
     var archetypeWeight = 0.05;
 
-    if (p === "possession-oriented tactician") {
+    if (p === "possession-oriented tactician" || p === "positional play specialist") {
       compWeight = 0.20;
       balWeight = 0.20;
       covWeight = 0.25;
@@ -598,7 +620,7 @@
       pairingWeight = 0.15;
       zoneWeight = 0.15;
       archetypeWeight = 0.05;
-    } else if (p === "direct counter-attacker") {
+    } else if (p === "direct counter-attacker" || p === "wide-oriented direct play") {
       compWeight = 0.25;
       balWeight = 0.25;
       covWeight = 0.15;

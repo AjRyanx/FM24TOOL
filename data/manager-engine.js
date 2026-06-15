@@ -10,6 +10,17 @@ function normalizeAttr(value, max) {
   return clamped / max;
 }
 
+function getManagerPressingStyle(manager) {
+  if (!manager) return "";
+  return manager["Pressing Style"] || manager.PressingStyle || "";
+}
+
+function getManagerPlayingMentality(manager) {
+  if (!manager) return "Balanced";
+  return manager["Playing Mentality"] || manager.PlayingMentality || "Balanced";
+}
+
+
 function isAntiMetaRole(roleId) {
   var antiMeta = {
     "Enganche_S": true,
@@ -67,7 +78,7 @@ var MENTALITY_MAP = {
 };
 
 function resolveMentality(manager) {
-  var raw = manager["Playing Mentality"];
+  var raw = getManagerPlayingMentality(manager);
   if (raw && MENTALITY_MAP[raw]) return MENTALITY_MAP[raw];
   var att = normalizeAttr(manager.Att);
   if (att >= 0.7) return "Positive";
@@ -141,10 +152,10 @@ var FORMATION_PHILOSOPHY_FIT = {
 };
 
 function getPhilosophyFormationKey(philosophy) {
-  if (philosophy === "possession-oriented tactician") return "pos";
+  if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") return "pos";
   if (philosophy === "aggressive high-press tactician") return "press";
   if (philosophy === "disciplined defensive organiser") return "def";
-  if (philosophy === "direct counter-attacker") return "ctr";
+  if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") return "ctr";
   if (philosophy === "pragmatic system-adapter") return "psa";
   return "bal";
 }
@@ -226,7 +237,7 @@ function resolveFormation(manager, squad, dna, philosophy) {
   var att = manager.Att || 0;
   var tacKnw = manager["Tac Knw"] || 0;
   var dis = manager.Dis || 0;
-  var pressing = manager["Pressing Style"] || "";
+  var pressing = getManagerPressingStyle(manager);
   var pressingNum = pressing === "More Often" ? 1 : pressing === "Less Often" ? 0 : 0.5;
   var aggression = getAggressionPropensity(manager);
 
@@ -813,7 +824,7 @@ function getDeterministicFloat(seed, salt, manager) {
 function getAggressionPropensity(manager) {
   var att = normalizeAttr(manager.Att || 10);
   var dis = normalizeAttr(manager.Dis || 10);
-  var ment = manager["Playing Mentality"] || "Balanced";
+  var ment = getManagerPlayingMentality(manager);
   var mentMap = {
     "Very Cautious": 0.0, "Cautious": 0.25, "Balanced": 0.5,
     "Attacking": 0.75, "Adventurous": 1.0
@@ -834,7 +845,7 @@ function roleScoreForManager(roleId, manager) {
   var maxPossible = profile.att + profile.tec + profile.dis;
   var baseAffinity = maxPossible > 0 ? (raw / maxPossible) : 0.5;
 
-  var pressing = manager["Pressing Style"] || "";
+  var pressing = getManagerPressingStyle(manager);
   var mgrPress = pressing === "More Often" ? 1.0 : pressing === "Less Often" ? 0.0 : 0.5;
   var rolePressNeed = (profile.press - 1) / 4;
   var pressDiff = Math.abs(mgrPress - rolePressNeed);
@@ -967,7 +978,7 @@ var getStrataRoleIdsManagerOnly = (function () {
 
 function contextMultiplier(roleId, manager, instructions, formation) {
   var mentality = instructions.mentality || "Balanced";
-  var pressingStyle = manager["Pressing Style"] || "";
+  var pressingStyle = getManagerPressingStyle(manager);
   var passingDirectness = instructions.passingDirectness || "";
   var triggerPress = instructions.triggerPress || "";
   var whenLost = instructions.whenPossessionLost || "";
@@ -1092,7 +1103,7 @@ function getMidfieldCombination(manager, dmCount, cmCount, instructions, philoso
   var att = normalizeAttr(manager.Att);
   var tec = normalizeAttr(manager.Tec);
   var dis = normalizeAttr(manager.Dis);
-  var press = manager["Pressing Style"] || "";
+  var press = getManagerPressingStyle(manager);
   var pNum = press === "More Often" ? 1 : press === "Less Often" ? 0 : 0.5;
 
   // Manager archetype affinities (0–1)
@@ -1106,7 +1117,9 @@ function getMidfieldCombination(manager, dmCount, cmCount, instructions, philoso
   // Boost affinity for the manager's primary philosophy
   var philMap = { "pos": "possession-oriented tactician", "press": "aggressive high-press tactician", "def": "disciplined defensive organiser", "ctr": "direct counter-attacker", "bal": "pragmatic system-adapter" };
   for (var tag in philMap) {
-    if (philMap[tag] === philosophy) {
+    if (philMap[tag] === philosophy ||
+        (tag === "pos" && philosophy === "positional play specialist") ||
+        (tag === "ctr" && philosophy === "wide-oriented direct play")) {
       philAffinities[tag] = Math.min(1, philAffinities[tag] + 0.12);
     }
   }
@@ -1299,10 +1312,10 @@ function getWDWACombination(manager, formation, instructions, philosophy, dna, f
   if (valid.length === 0) return null;
 
   var philKey = "bt";
-  if (philosophy === "possession-oriented tactician") philKey = "pos";
+  if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") philKey = "pos";
   else if (philosophy === "aggressive high-press tactician") philKey = "press";
   else if (philosophy === "disciplined defensive organiser") philKey = "def";
-  else if (philosophy === "direct counter-attacker") philKey = "ctr";
+  else if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") philKey = "ctr";
   else if (philosophy === "balanced tactician") philKey = "bt";
   else if (philosophy === "pragmatic system-adapter") philKey = "psa";
 
@@ -1445,10 +1458,10 @@ function getSTCombination(manager, count, philosophy, dna) {
   if (!philosophy) philosophy = deriveManagerPhilosophy(manager);
 
   var philKey = "bt";
-  if (philosophy === "possession-oriented tactician") philKey = "pos";
+  if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") philKey = "pos";
   else if (philosophy === "aggressive high-press tactician") philKey = "press";
   else if (philosophy === "disciplined defensive organiser") philKey = "def";
-  else if (philosophy === "direct counter-attacker") philKey = "ctr";
+  else if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") philKey = "ctr";
   else if (philosophy === "balanced tactician") philKey = "bt";
   else if (philosophy === "pragmatic system-adapter") philKey = "psa";
 
@@ -1506,10 +1519,10 @@ function getCBCombination(manager, count, philosophy, dna, formation) {
   if (valid.length === 0) return null;
 
   var philKey = "bt";
-  if (philosophy === "possession-oriented tactician") philKey = "pos";
+  if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") philKey = "pos";
   else if (philosophy === "aggressive high-press tactician") philKey = "press";
   else if (philosophy === "disciplined defensive organiser") philKey = "def";
-  else if (philosophy === "direct counter-attacker") philKey = "ctr";
+  else if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") philKey = "ctr";
   else if (philosophy === "balanced tactician") philKey = "bt";
   else if (philosophy === "pragmatic system-adapter") philKey = "psa";
 
@@ -1706,10 +1719,10 @@ function deriveManagerPhilosophy(manager) {
   var tacKnw = normalizeAttr(manager["Tac Knw"]);
   var ada = normalizeAttr(manager.Ada);
   var men = normalizeAttr(manager.Men);
-  var pressing = manager["Pressing Style"] || "";
+  var pressing = getManagerPressingStyle(manager);
   var pNum = pressing === "More Often" ? 1 : pressing === "Less Often" ? 0 : 0.5;
 
-  var mentalityStr = manager["Playing Mentality"] || "Balanced";
+  var mentalityStr = getManagerPlayingMentality(manager);
   var mentVal = 0.5;
   if (mentalityStr === "Very Cautious") mentVal = 0.1;
   else if (mentalityStr === "Cautious") mentVal = 0.3;
@@ -1748,6 +1761,20 @@ function deriveManagerPhilosophy(manager) {
   scores["pragmatic system-adapter"] =
     ada * 0.35 + tacKnw * 0.25 + dis * 0.15 + tec * 0.15 + men * 0.10;
 
+  // Positional Play Specialist: needs elite tec and tacKnw, high att, high men
+  scores["positional play specialist"] =
+    tec * 0.35 + tacKnw * 0.35 + att * 0.20 + men * 0.10;
+  if (tec < 0.70 || tacKnw < 0.70 || att < 0.60) {
+    scores["positional play specialist"] = 0;
+  }
+
+  // Wide-Oriented Direct Play: needs high attack, high discipline, moderate-to-low technique
+  scores["wide-oriented direct play"] =
+    att * 0.35 + dis * 0.30 + (1 - tec) * 0.20 + men * 0.15;
+  if (att < 0.50 || dis < 0.50 || tec >= 0.70) {
+    scores["wide-oriented direct play"] = 0;
+  }
+
   // Prioritize attribute profiles over pressing flags
   if (coachingStyle === "Defending" || coachingStyle === "Mental") {
     scores["direct counter-attacker"] += 0.05;
@@ -1759,6 +1786,8 @@ function deriveManagerPhilosophy(manager) {
     // Suppress aggressive high press and possession styles
     scores["aggressive high-press tactician"] *= 0.2;
     scores["possession-oriented tactician"] *= 0.7;
+    scores["positional play specialist"] *= 0.7;
+    scores["wide-oriented direct play"] *= 0.5;
     // Boost defensive and counter styles
     scores["disciplined defensive organiser"] += (1.0 - mentVal) * 0.25;
     scores["direct counter-attacker"] += (0.8 - mentVal) * 0.15;
@@ -1772,14 +1801,18 @@ function deriveManagerPhilosophy(manager) {
     // Mildly boost attacking styles
     scores["aggressive high-press tactician"] += (mentVal - 0.5) * 0.2;
     scores["possession-oriented tactician"] += (mentVal - 0.5) * 0.15;
+    scores["positional play specialist"] += (mentVal - 0.5) * 0.15;
     scores["direct counter-attacker"] += (mentVal - 0.5) * 0.25;
+    scores["wide-oriented direct play"] += (mentVal - 0.5) * 0.20;
   }
 
   var specializedScores = [
     scores["possession-oriented tactician"],
     scores["aggressive high-press tactician"],
     scores["disciplined defensive organiser"],
-    scores["direct counter-attacker"]
+    scores["direct counter-attacker"],
+    scores["positional play specialist"],
+    scores["wide-oriented direct play"]
   ];
   var maxSpecialized = Math.max.apply(null, specializedScores);
   scores["pragmatic system-adapter"] -= (maxSpecialized * 0.2);
@@ -1803,6 +1836,75 @@ function deriveManagerPhilosophy(manager) {
 //   roleBoost: roleId → multiplier (1.2–1.5 = strong preference)
 
 var PHILOSOPHY_PROFILES = {
+  "positional play specialist": {
+    instructionOverrides: {
+      playOutOfDefence: true,
+      workBallIntoBox: true,
+      defensiveLine: "Higher",
+      lineOfEngagement: "High",
+      creativeFreedom: "More Expressive"
+    },
+    instructionVetoes: [
+      "shootOnSight", "hitEarlyCrosses", "playForSetPieces", "shootFromDistance"
+    ],
+    passingDirectnessMax: 1, // Max is "Much Shorter" (0=Extremely Short, 1=Much Shorter)
+    tempoMax: 3, // Max is "Normal" (0=Extremely Low, 1=Much Lower, 2=Lower, 3=Normal)
+    roleSuppression: {
+      TF_S: 0.05, TF_A: 0.05,
+      WTM_S: 0.05, WTM_A: 0.05,
+      NCB_D: 0.05, NCB_ST: 0.05, NCB_CO: 0.05,
+      NFB_D: 0.05,
+      Poacher_A: 0.15,
+      Winger_A: 0.2, Winger_S: 0.2,
+      Winger_WM_A: 0.2, Winger_WM_S: 0.2
+    },
+    roleBoost: {
+      BPD_D: 1.5, BPD_ST: 1.4, BPD_CO: 1.4,
+      Libero_S: 1.4, Libero_A: 1.4,
+      WCB_S: 1.3, WCB_D: 1.3,
+      DLP_D: 1.4, DLP_S: 1.4,
+      Regista_S: 1.4,
+      SK_S: 1.35, SK_A: 1.35,
+      F9_S: 1.35,
+      IWB_S: 1.4, IWB_A: 1.35,
+      IF_S: 1.2, IF_A: 1.15, IW_S: 1.3, IW_A: 1.25,
+      AP_S: 1.35, AP_A: 1.3, AP_AMC_S: 1.35, AP_AMC_A: 1.3
+    }
+  },
+  "wide-oriented direct play": {
+    instructionOverrides: {
+      focusLeftFlank: true,
+      focusRightFlank: true,
+      overlapLeft: true,
+      overlapRight: true,
+      passingDirectness: "More Direct",
+      tempo: "Higher",
+      whenPossessionLost: "Regroup"
+    },
+    instructionVetoes: [
+      "playOutOfDefence", "workBallIntoBox", "dribbleLess"
+    ],
+    passingDirectnessMax: 6,
+    tempoMax: 6,
+    roleSuppression: {
+      IWB_S: 0.05, IWB_A: 0.05,
+      Regista_S: 0.05,
+      F9_S: 0.05,
+      Libero_S: 0.05, Libero_A: 0.05,
+      AP_S: 0.1, AP_A: 0.1, AP_AMC_S: 0.1, AP_AMC_A: 0.1,
+      DLP_S: 0.15, DLP_D: 0.15,
+      Trequartista_A: 0.05, Enganche_S: 0.05
+    },
+    roleBoost: {
+      Winger_A: 1.5, Winger_S: 1.45,
+      Winger_WM_A: 1.5, Winger_WM_S: 1.45,
+      TF_A: 1.4, TF_S: 1.35,
+      WTM_A: 1.4, WTM_S: 1.35,
+      FB_A: 1.3, FB_S: 1.25, WB_A: 1.35, WB_S: 1.3,
+      BWM_D: 1.25, BWM_S: 1.25,
+      BBM_S: 1.2, CM_A: 1.2, CM_D: 1.2
+    }
+  },
   "possession-oriented tactician": {
     instructionOverrides: {
       playOutOfDefence: true,
@@ -2042,6 +2144,29 @@ function applyPhilosophyConstraints(instructions, philosophy, manager) {
 
   // 2. Fallback to hard overrides (probabilistic or skipped based on rigidity)
   var overrides = profile.instructionOverrides;
+  if (philosophy === "disciplined defensive organiser") {
+    var pressing = getManagerPressingStyle(manager) || "Standard";
+    var pNum = pressing === "More Often" ? 1 : pressing === "Less Often" ? 0 : 0.5;
+
+    // Clone overrides to avoid mutating global profile
+    overrides = Object.assign({}, overrides);
+
+    if (pNum >= 0.5) {
+      // Mid-block aggressive presser sub-variant
+      overrides.lineOfEngagement = "Mid block";
+      overrides.defensiveLine = "Lower";
+      overrides.triggerPress = "More Often";
+      overrides.whenPossessionLost = "Regroup";
+    } else {
+      // Low-block passive sub-variant
+      overrides.lineOfEngagement = "Low";
+      overrides.defensiveLine = "Much Lower";
+      overrides.triggerPress = "Less Often";
+      overrides.whenPossessionLost = "Regroup";
+      overrides.whenPossessionWon = "Hold Shape";
+    }
+  }
+
   for (var key in overrides) {
     if (overrides.hasOwnProperty(key)) {
       var roll = getDeterministicFloat(dna.seed, key, manager);
@@ -2081,7 +2206,7 @@ function applyPhilosophyConstraints(instructions, philosophy, manager) {
     if (instructions.mentality === "Defensive" || instructions.mentality === "Cautious" || instructions.mentality === "Balanced") {
       instructions.mentality = "Positive";
     }
-  } else if (philosophy === "possession-oriented tactician") {
+  } else if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") {
     // Possession build-up cannot be played on Cautious or Defensive team mentality.
     if (instructions.mentality === "Defensive" || instructions.mentality === "Cautious") {
       instructions.mentality = "Positive";
@@ -2163,7 +2288,7 @@ function generateInstructions(manager) {
   var men = normalizeAttr(manager.Men);
   var tacKnw = normalizeAttr(manager["Tac Knw"]);
   var ada = normalizeAttr(manager.Ada);
-  var pressing = manager["Pressing Style"] || "";
+  var pressing = getManagerPressingStyle(manager);
   var pNum = pressing === "More Often" ? 1 : pressing === "Less Often" ? 0 : 0.5;
   var marking = manager["Marking Style"] || "";
   var mNum = marking === "Man" ? 0.7 : marking === "Zonal" ? 0.4 : marking === "Mixed" ? 0.5 : 0.45;
@@ -2313,6 +2438,8 @@ function generateInstructions(manager) {
 // ─── SECTION 7: VALIDATION & BALANCE ───
 
 function validateInstructions(inst, manager) {
+  var philosophy = manager ? deriveManagerPhilosophy(manager) : "";
+
   // Existing guards
   if (inst.playOutOfDefence) {
     if (inst.passingDirectness === "Much More Direct") inst.passingDirectness = "More Direct";
@@ -2389,7 +2516,7 @@ function validateInstructions(inst, manager) {
   }
 
   // Regroup is viable with mid/high block but suicidal with deep block
-  if (inst.whenPossessionLost === "Regroup") {
+  if (inst.whenPossessionLost === "Regroup" && philosophy !== "disciplined defensive organiser") {
     if (inst.lineOfEngagement === "Low" || inst.lineOfEngagement === "Very Low") {
       inst.lineOfEngagement = "Mid block";
     }
@@ -2402,8 +2529,10 @@ function validateInstructions(inst, manager) {
   var isPassiveLoE = (inst.lineOfEngagement === "Low" || inst.lineOfEngagement === "Very Low");
   var isPassiveDL = (inst.defensiveLine === "Lower" || inst.defensiveLine === "Much Lower");
   if (isPassiveLoE && isPassiveDL) {
-    inst.lineOfEngagement = "Mid block";
-    inst.defensiveLine = "Standard";
+    if (philosophy !== "disciplined defensive organiser") {
+      inst.lineOfEngagement = "Mid block";
+      inst.defensiveLine = "Standard";
+    }
     if (inst.crossEngagement === "Invite Crosses") inst.crossEngagement = "Normal";
     if (inst.defensiveLineBehavior === "Drop Off More") inst.defensiveLineBehavior = "Step Up More";
   }
@@ -3841,8 +3970,15 @@ function enforceCBcoverage(slots, manager, formation) {
       if (entry && entry.archetypes) {
         var phil = manager._philosophy || "";
         for (var ai = 0; ai < entry.archetypes.length; ai++) {
-          var map = { "pos": "possession-oriented tactician", "press": "aggressive high-press tactician", "def": "disciplined defensive organiser", "ctr": "direct counter-attacker", "bal": "pragmatic system-adapter" };
-          if (map[entry.archetypes[ai]] === phil) { archetypeMatch = 1.0; break; }
+          var map = {
+            "pos": ["possession-oriented tactician", "positional play specialist"],
+            "press": ["aggressive high-press tactician"],
+            "def": ["disciplined defensive organiser"],
+            "ctr": ["direct counter-attacker", "wide-oriented direct play"],
+            "bal": ["pragmatic system-adapter", "balanced tactician"]
+          };
+          var allowed = map[entry.archetypes[ai]];
+          if (allowed && allowed.indexOf(phil) !== -1) { archetypeMatch = 1.0; break; }
         }
       }
       var total = fbCompat * 0.4 + cbCompat * 0.3 + aff * 0.2 + archetypeMatch * 0.1;
@@ -4874,6 +5010,8 @@ function evaluatePressingCohesion(slots, instructions, manager) {
 // ════════════════════════════════════════════════════════════════
 
 var ARCHETYPE_STYLE_VECTORS = {
+  "positional play specialist": { att: 3, tec: 5, dis: 3, press: 3 },
+  "wide-oriented direct play": { att: 5, tec: 1, dis: 4, press: 2 },
   "possession-oriented tactician": { att: 2, tec: 5, dis: 3, press: 2 },
   "aggressive high-press tactician": { att: 4, tec: 2, dis: 2, press: 5 },
   "disciplined defensive organiser": { att: 1, tec: 2, dis: 5, press: 3 },
@@ -4962,12 +5100,19 @@ function computeArchetypeFit(slots, instructions, philosophy) {
   }
 
   // Step 5: Archetype-specific structural checks
-  if (philosophy === "possession-oriented tactician") {
+  if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") {
     if (countPlaymakers(slots) < 2) totalPenalty += 0.10;
+    if (philosophy === "positional play specialist") {
+      if (instructions && instructions.defensiveLine !== "Higher" && instructions.defensiveLine !== "Much Higher") totalPenalty += 0.10;
+    }
   } else if (philosophy === "aggressive high-press tactician") {
     if (instructions && instructions.lineOfEngagement !== "High") totalPenalty += 0.15;
-  } else if (philosophy === "direct counter-attacker") {
-    if (countDirectRunners(slots) < 2) totalPenalty += 0.10;
+  } else if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") {
+    if (philosophy === "wide-oriented direct play") {
+      if (countDirectRunners(slots) < 1) totalPenalty += 0.10;
+    } else {
+      if (countDirectRunners(slots) < 2) totalPenalty += 0.10;
+    }
     if (countPlaymakers(slots) > 2) totalPenalty += 0.10;
   }
 
@@ -5578,7 +5723,7 @@ function reconcileInstructionsWithRoles(slots, instructions, philosophy, manager
   var pressForwards = countPressingForwards(slots);
   var directRunners = countDirectRunners(slots);
 
-  if (philosophy === "possession-oriented tactician") {
+  if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") {
     if (instructions.whenPossessionLost === undefined) {
       instructions.whenPossessionLost = (instructions.mentality === "Defensive" || instructions.mentality === "Cautious") ? "Regroup" : "Counter-Press";
     }
@@ -5586,7 +5731,7 @@ function reconcileInstructionsWithRoles(slots, instructions, philosophy, manager
       var dna = getManagerDNA(manager.Name, manager);
       instructions.whenPossessionWon = (dna.seed > 0.5) ? "Counter" : "Hold Shape";
     }
-  } else if (philosophy === "direct counter-attacker") {
+  } else if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") {
     instructions.whenPossessionLost = "Regroup";
     instructions.whenPossessionWon = "Counter";
     delete instructions.playOutOfDefence;
@@ -5694,7 +5839,8 @@ function enforceWideRoleVariety(slots, philosophy, dna) {
 
   // AML/AMR: IF/IW dominate; AP/RMD banned; max one Winger across both flanks
   function preferInsideRole(strata) {
-    if (philosophy === "possession-oriented tactician") return "IW";
+    if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") return "IW";
+    if (philosophy === "wide-oriented direct play") return "W";
     return dna.flankBias > 0.55 ? "IF" : "IW";
   }
 
@@ -5996,11 +6142,16 @@ function deriveGKDistribution(manager, instructions, slots, philosophy) {
   if (!philosophy) philosophy = deriveManagerPhilosophy(manager);
 
   // Philosophy-first distribution profiles
-  if (philosophy === "direct counter-attacker") {
+  if (philosophy === "direct counter-attacker" || philosophy === "wide-oriented direct play") {
     instructions.gkDistributionPace = "Distribute Quickly";
-    instructions.gkDistributionMethod = dna.seed > 0.5 ? "Mixed" : "Take Long Kicks";
-    instructions.gkDistributionTarget = dna.seed > 0.66 ? "Target Forward" : "Wide Players";
-  } else if (philosophy === "possession-oriented tactician") {
+    if (philosophy === "wide-oriented direct play") {
+      instructions.gkDistributionMethod = "Take Long Kicks";
+      instructions.gkDistributionTarget = dna.seed > 0.5 ? "Wide Players" : "Target Forward";
+    } else {
+      instructions.gkDistributionMethod = dna.seed > 0.5 ? "Mixed" : "Take Long Kicks";
+      instructions.gkDistributionTarget = dna.seed > 0.66 ? "Target Forward" : "Wide Players";
+    }
+  } else if (philosophy === "possession-oriented tactician" || philosophy === "positional play specialist") {
     instructions.gkDistributionMethod = "Take Short Kicks";
     instructions.gkDistributionPace = dis > 0.55 ? "Distribute Slowly" : "Normal";
     if (dna.seed > 0.75) {

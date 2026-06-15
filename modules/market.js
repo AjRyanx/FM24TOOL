@@ -372,6 +372,44 @@ function _marketBuildFilters(container, state, market) {
   wageDiv.appendChild(wageInp);
   row.appendChild(wageDiv);
 
+  // Min Minutes
+  var minsDiv = document.createElement("div");
+  minsDiv.className = "flex flex-col gap-1 w-36";
+  var minsL = document.createElement("label");
+  minsL.className = "text-xs text-text-muted tracking-wider flex justify-between";
+  var minsVal = state.minMins !== undefined ? state.minMins : 0;
+  minsL.innerHTML = "MIN MINS: <span class='text-white font-bold font-mono'>" + (minsVal === 0 ? "Any" : minsVal + "m") + "</span>";
+  minsDiv.appendChild(minsL);
+  var minsInp = document.createElement("input");
+  minsInp.type = "range"; minsInp.min = "0"; minsInp.max = "3000"; minsInp.step = "100";
+  minsInp.className = "w-full h-1 bg-border rounded-lg appearance-none cursor-pointer accent-white";
+  minsInp.value = minsVal;
+  minsInp.addEventListener("input", function () {
+    var v = parseInt(minsInp.value, 10) || 0;
+    minsL.innerHTML = "MIN MINS: <span class='text-white font-bold font-mono'>" + (v === 0 ? "Any" : v + "m") + "</span>";
+  });
+  minsDiv.appendChild(minsInp);
+  row.appendChild(minsDiv);
+
+  // Min Rating
+  var ratDiv = document.createElement("div");
+  ratDiv.className = "flex flex-col gap-1 w-36";
+  var ratL = document.createElement("label");
+  ratL.className = "text-xs text-text-muted tracking-wider flex justify-between";
+  var ratVal = (state.minRat !== undefined && state.minRat >= 6.0) ? state.minRat : 6.0;
+  ratL.innerHTML = "MIN RAT: <span class='text-white font-bold font-mono'>" + (ratVal <= 6.0 ? "Any" : ratVal.toFixed(2)) + "</span>";
+  ratDiv.appendChild(ratL);
+  var ratInp = document.createElement("input");
+  ratInp.type = "range"; ratInp.min = "6.0"; ratInp.max = "8.0"; ratInp.step = "0.05";
+  ratInp.className = "w-full h-1 bg-border rounded-lg appearance-none cursor-pointer accent-white";
+  ratInp.value = ratVal;
+  ratInp.addEventListener("input", function () {
+    var v = parseFloat(ratInp.value) || 6.0;
+    ratL.innerHTML = "MIN RAT: <span class='text-white font-bold font-mono'>" + (v <= 6.0 ? "Any" : v.toFixed(2)) + "</span>";
+  });
+  ratDiv.appendChild(ratInp);
+  row.appendChild(ratDiv);
+
   // Buttons
   var btnDiv = document.createElement("div");
   btnDiv.className = "flex gap-2 items-end pb-0.5";
@@ -386,6 +424,9 @@ function _marketBuildFilters(container, state, market) {
     state.nationality = natInp.value || "";
     state.maxAP = apInp.value || "";
     state.maxWage = wageInp.value || "";
+    state.minMins = parseInt(minsInp.value, 10) || 0;
+    var rawRat = parseFloat(ratInp.value) || 6.0;
+    state.minRat = rawRat <= 6.0 ? 0 : rawRat;
     state.currentPage = 0; _marketRenderResults();
   });
   btnDiv.appendChild(applyBtn);
@@ -396,6 +437,7 @@ function _marketBuildFilters(container, state, market) {
   resetBtn.addEventListener("click", function () {
     state.minAge = 15; state.maxAge = 40; state.minScore = 11;
     state.nationality = ""; state.maxAP = ""; state.maxWage = "";
+    state.minMins = 0; state.minRat = 0;
     state.strata = "All"; state.flank = "All";
     state.currentPage = 0;
     _marketBuildFilters(container, state, market);
@@ -476,6 +518,15 @@ function _marketRenderResults() {
       if (!pFl || !Array.isArray(pFl) || pFl.indexOf(state.flank) === -1) continue;
     }
     if (state.minScore !== undefined && (scores._bestScore === -1 || scores._bestScore < state.minScore)) continue;
+
+    if (state.minMins) {
+      var mMins = parseInt(p.Mins, 10);
+      if (isNaN(mMins) || mMins < state.minMins) continue;
+    }
+    if (state.minRat) {
+      var mRat = parseFloat(p.AvRat);
+      if (isNaN(mRat) || mRat < state.minRat) continue;
+    }
 
     if (state.onlyShortlisted) {
       if (isShortlistedIdx(p) === -1) continue;

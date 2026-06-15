@@ -55,6 +55,14 @@ function computeSquadBaseline() {
 
   var valid = squad.filter(function (p) { return p.CA > 0; });
 
+  // If proven-only mode, filter to players with 900+ mins (starter/rotation)
+  if (state.provenOnly && typeof PlayerUtils !== "undefined" && PlayerUtils.getMinutesLoad) {
+    valid = valid.filter(function (p) {
+      var ml = PlayerUtils.getMinutesLoad(p);
+      return ml.tier === 'starter' || ml.tier === 'rotation';
+    });
+  }
+
   if (valid.length < 5) {
     state.squadBaseline = null;
     return;
@@ -321,7 +329,15 @@ function renderWonderkidView() {
 
   // Limit to top N
   var limit = state.limit || 100;
-  var displayed = candidates.slice(0, limit);
+  var allDisplayed = candidates.slice(0, limit);
+
+  // Pagination
+  var pageSize = 100;
+  var maxPage = Math.max(0, Math.ceil(allDisplayed.length / pageSize) - 1);
+  if (state.currentPage === undefined) state.currentPage = 0;
+  state.currentPage = Math.min(state.currentPage, maxPage);
+  var pageStart = state.currentPage * pageSize;
+  var displayed = allDisplayed.slice(pageStart, pageStart + pageSize);
 
   // Update badge
   var badge = document.getElementById("wonderkid-badge");
@@ -337,6 +353,7 @@ function renderWonderkidView() {
   if (base && base.isDynamic) {
     html += "<div class='text-[10px] text-cyan-400/70 bg-cyan-400/5 border border-cyan-400/10 rounded px-3 py-2 mb-3'>";
     html += "Thresholds scaled to your squad \u2014 median CA <strong>" + base.medianCA + "</strong> from top <strong>" + base.topN + "</strong> players";
+    if (state.provenOnly) html += " <span class='text-amber-400'>(proven starters only)</span>";
     html += "</div>";
   } else if (!squad || squad.length === 0) {
     html += "<div class='text-[10px] text-text-muted bg-surface border border-border rounded px-3 py-2 mb-3'>";
@@ -364,15 +381,16 @@ function renderWonderkidView() {
   html += "<label class='text-[10px] uppercase text-text-muted tracking-wider'>Max AP <input id='wk-maxap' type='text' value='" + escHtml(state.maxAP || "") + "' placeholder='\u221E' class='w-16 bg-surface border border-border rounded px-1 py-0.5 text-xs text-white'></label>";
   html += "<label class='flex items-center gap-1 text-[10px] uppercase text-text-muted tracking-wider'><input id='wk-unknown' type='checkbox'" + (state.includeUnknown ? " checked" : "") + " class='accent-cyan-500'> Show ?PA</label>";
   html += "<label class='flex items-center gap-1 text-[10px] uppercase text-text-muted tracking-wider'><input id='wk-fitfilter' type='checkbox'" + (state.showOnlyTacticFits ? " checked" : "") + " class='accent-cyan-500' " + (tactic.isComplete ? "" : "disabled") + "> Fits Tactic</label>";
+  html += "<label class='flex items-center gap-1 text-[10px] uppercase text-text-muted tracking-wider'><input id='wk-proven' type='checkbox'" + (state.provenOnly ? " checked" : "") + " class='accent-cyan-500'> Proven Starters</label>";
 
   // Reset button
   var resetLabel = base && base.isDynamic ? "Reset to Auto" : "Reset Filters";
   html += "<button id='wk-reset-btn' class='text-[10px] uppercase tracking-wider text-text-muted hover:text-white border border-border hover:border-white rounded px-2 py-0.5 transition-colors'>" + resetLabel + "</button>";
 
-  html += "<span class='text-[10px] text-text-muted ml-auto'>Showing " + displayed.length + " of " + candidates.length + "</span>";
+  html += "<span class='text-[10px] text-text-muted ml-auto'>Page " + (state.currentPage + 1) + " of " + (maxPage + 1) + " (" + allDisplayed.length + " total)</span>";
   html += "</div>";
 
-  if (displayed.length === 0) {
+  if (allDisplayed.length === 0) {
     var emptyMsg = "No wonderkids found matching your filters.";
     if (base && base.isDynamic && !state.userOverride.minPA) {
       emptyMsg += " Your squad\u2019s threshold requires PA \u2265 " + thresholds.minPA + ". Lower Min PA or enable Show ?PA to expand results.";
@@ -458,6 +476,16 @@ function renderWonderkidView() {
   });
 
   html += "</tbody></table></div>";
+
+  // Pagination controls
+  if (maxPage > 0) {
+    html += "<div class='flex justify-center items-center gap-3 mt-3 mb-2'>";
+    html += "<button class='wk-page-btn px-3 py-1 text-xs border border-[#333] rounded text-text-secondary hover:text-white hover:border-[#666] transition-colors'" + (state.currentPage === 0 ? " disabled style='opacity:0.4;cursor:default'" : "") + " data-wk-page='prev'>\u25C0 Prev</button>";
+    html += "<span class='text-xs text-text-muted'>Page " + (state.currentPage + 1) + " of " + (maxPage + 1) + "</span>";
+    html += "<button class='wk-page-btn px-3 py-1 text-xs border border-[#333] rounded text-text-secondary hover:text-white hover:border-[#666] transition-colors'" + (state.currentPage >= maxPage ? " disabled style='opacity:0.4;cursor:default'" : "") + " data-wk-page='next'>Next \u25B6</button>";
+    html += "</div>";
+  }
+
   html += "</div>";
   contentC.innerHTML = html;
 
@@ -515,6 +543,11 @@ function attachWonderkidListeners(state, thresholds) {
     wkFitFilter.removeEventListener("change", applyWonderkidFilters);
     wkFitFilter.addEventListener("change", applyWonderkidFilters);
   }
+  var wkProven = document.getElementById("wk-proven");
+  if (wkProven) {
+    wkProven.removeEventListener("change", applyWonderkidFilters);
+    wkProven.addEventListener("change", applyWonderkidFilters);
+  }
 
   // Reset button
   var resetBtn = document.getElementById("wk-reset-btn");
@@ -536,6 +569,24 @@ function attachWonderkidListeners(state, thresholds) {
       row.removeEventListener("click", handleWonderkidRowClick);
       row.addEventListener("click", handleWonderkidRowClick);
     });
+
+    // Pagination buttons
+    contentC.querySelectorAll(".wk-page-btn").forEach(function (btn) {
+      btn.removeEventListener("click", handleWonderkidPage);
+      btn.addEventListener("click", handleWonderkidPage);
+    });
+  }
+}
+
+function handleWonderkidPage() {
+  var state = window.FM24State.wonderkidUI;
+  var dir = this.dataset.wkPage;
+  if (dir === "prev" && state.currentPage > 0) {
+    state.currentPage--;
+    renderWonderkidView();
+  } else if (dir === "next") {
+    state.currentPage++;
+    renderWonderkidView();
   }
 }
 
@@ -580,5 +631,7 @@ function applyWonderkidFilters() {
   if (el) state.includeUnknown = el.checked;
   el = document.getElementById("wk-fitfilter");
   if (el) state.showOnlyTacticFits = el.checked;
+  el = document.getElementById("wk-proven");
+  if (el) state.provenOnly = el.checked;
   renderWonderkidView();
 }

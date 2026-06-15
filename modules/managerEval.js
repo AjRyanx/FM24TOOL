@@ -39,12 +39,13 @@ function classifySquadStrength(squad) {
   }
   var avgCA = count > 0 ? sumCA / count : 0;
   var normAvg = maxCA > 0 ? avgCA / maxCA : 0.5;
+  var normMax = maxCA > 0 ? maxCA / 200 : 0.5;
   var norm200 = avgCA / 200;
   var tier = "Low";
   if (norm200 >= 0.65) tier = "Elite";
   else if (norm200 >= 0.50) tier = "Strong";
   else if (norm200 >= 0.35) tier = "Developing";
-  return { tier: tier, avgCA: avgCA, maxCA: maxCA, minCA: minCA, normAvg: normAvg, norm200: norm200, count: count };
+  return { tier: tier, avgCA: avgCA, maxCA: maxCA, minCA: minCA, normAvg: normAvg, normMax: normMax, norm200: norm200, count: count };
 }
 
 function calculateManagerFit(manager, squad, existingTactic) {
@@ -101,6 +102,21 @@ function calculateManagerFit(manager, squad, existingTactic) {
     return 0;
   }
 
+  function getAssignedPlayerMinutesWeight(playerName) {
+    for (var i = 0; i < squad.length; i++) {
+      if (squad[i].Name === playerName) {
+        var m = parseInt(squad[i].Mins, 10);
+        if (isNaN(m) || m <= 0) return 0.5;
+        if (m >= 2700) return 1.0;
+        if (m >= 1800) return 0.9;
+        if (m >= 900)  return 0.75;
+        if (m >= 270)  return 0.6;
+        return 0.4;
+      }
+    }
+    return 0.5;
+  }
+
   // Determine context: assigned players vs best-available
   var hasTactic = !!existingTactic;
   var tactic = existingTactic || generateTacticFromManager(manager, squad);
@@ -137,6 +153,9 @@ function calculateManagerFit(manager, squad, existingTactic) {
       var bestScore = 0;
       if (useAssigned && slot.playerName) {
         bestScore = getAssignedPlayerScore(slot.playerName, slot.roleId, tactic.instructions);
+        // Minutes weight: discount coverage from low-minute players
+        var minsW = getAssignedPlayerMinutesWeight(slot.playerName);
+        bestScore *= minsW;
       } else {
         bestScore = getBestPlayerScore(sid, slot.roleId, tactic.instructions);
       }
@@ -325,6 +344,19 @@ function calculateManagerFit(manager, squad, existingTactic) {
     }
 
     score += cultureScore;
+
+    // 3d: Playing Time Harmony (up to 4 bonus points)
+    if (typeof PlayerUtils !== "undefined" && PlayerUtils.getPlayingTimeHarmony) {
+      var harmonyResult = PlayerUtils.getPlayingTimeHarmony(squad);
+      var harmonyScore = (harmonyResult && typeof harmonyResult.score === 'number') ? harmonyResult.score : 0;
+      score += harmonyScore;
+      if (harmonyScore <= 2) {
+        insights.push("Playing time dissatisfaction may be creating tension in the dressing room.");
+      } else if (harmonyScore >= 6) {
+        insights.push("Squad appears content with playing time distribution.");
+      }
+    }
+
     return Math.min(score, 30);
   }
 
@@ -461,10 +493,34 @@ function calculateManagerFit(manager, squad, existingTactic) {
     pillars.baseline = { score: round1(gapSeverity), max: 15 };
   }
 
+  // ─── SQUAD DNA (derived from style capacity pillar internals) ───
+
+  function dnaPct(raw) { return Math.round(Math.max(0, Math.min(1, raw)) * 100); }
+
+  var physAvg = (squadAvg("Str") + squadAvg("Sta") + squadAvg("Wor")) / 60;
+  var possAvg = (squadAvg("Pas") + squadAvg("Tec") + squadAvg("Vis")) / 60;
+  var pressScore = styleCapacity > 0 ? styleCapacity / 15 : 0.5;
+  var creatAvg = (squadAvg("Cre") + squadAvg("Flr") + squadAvg("OtB")) / 60;
+
+  var squadDNA = {
+    physicality: { score: dnaPct(physAvg), note: physAvg < 0.5 ? "Low physicality limits pressing intensity" : "Squad has adequate physical profile" },
+    possession:  { score: dnaPct(possAvg), note: possAvg < 0.5 ? "Squad lacks technical quality for possession play" : "Squad has the technique to maintain possession" },
+    pressing:    { score: dnaPct(pressScore), note: pressScore < 0.5 ? "Squad work rate does not support high press" : "Squad pressing capacity aligns with manager's demands" },
+    creativity:  { score: dnaPct(creatAvg), note: creatAvg < 0.5 ? "Limited creative output in attacking third" : "Squad has creative spark in attack" }
+  };
+
+  // Playing time audit
+  var playingTimeAudit = null;
+  if (typeof PlayerUtils !== "undefined" && PlayerUtils.getSquadPlayingTimeAudit) {
+    playingTimeAudit = PlayerUtils.getSquadPlayingTimeAudit(squad);
+  }
+
   return {
     overallScore: overallScore,
     pillars: pillars,
-    insights: insights
+    insights: insights,
+    squadDNA: squadDNA,
+    playingTimeAudit: playingTimeAudit
   };
 
   function round1(v) { return Math.round(v * 10) / 10; }

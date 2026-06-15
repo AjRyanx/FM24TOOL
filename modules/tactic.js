@@ -447,6 +447,10 @@ function saveTacticSlots() {
   try {
     localStorage.setItem("fm24_tactic_slots", JSON.stringify(window.FM24State.tacticSlots));
   } catch (_) {}
+  // Also persist to Dexie if available
+  if (window.FM24DB && window.FM24State.tacticSlots && window.FM24State.tacticSlots.slots) {
+    window.FM24DB.saveTacticSlots(window.FM24State.tacticSlots.slots);
+  }
 }
 
 function saveActiveTactic() {

@@ -98,6 +98,9 @@ function renderWageDashboard() {
       highestName = squad[i].Name || "";
     }
   }
+  // Add manager wage to total
+  var managerWage = window.FM24State.manager.managerWage || 0;
+  totalWeekly += managerWage;
   var totalAnnual = totalWeekly * 52;
 
   // ─── STRATA WAGE DISTRIBUTION ───
@@ -224,6 +227,22 @@ function renderWageDashboard() {
     html += "<th class='wh-sort-th text-white font-semibold tracking-tight text-center py-2 px-2 cursor-pointer' data-sort='wage_tier'>Wage Tier" + sortArrow("wage_tier") + "</th>";
     html += "<th class='wh-sort-th text-white font-semibold tracking-tight text-center py-2 px-2 cursor-pointer' data-sort='value_rating'>Value Rating" + sortArrow("value_rating") + "</th>";
     html += "</tr></thead><tbody>";
+
+    // Manager row
+    if (managerWage > 0) {
+      html += "<tr class='border-b border-[#1F1F1F] bg-[#0A0A0A]/50'>";
+      html += "<td class='py-1.5 px-2 text-white font-bold whitespace-nowrap'>Manager</td>";
+      html += "<td class='py-1.5 px-2 text-text-secondary'>\u2014</td>";
+      html += "<td class='py-1.5 px-2 text-right font-mono tabular-nums text-white font-bold'>" + fmtCurrency(managerWage) + "</td>";
+      html += "<td class='py-1.5 px-2 text-right font-mono tabular-nums text-text-muted'>\u2014</td>";
+      html += "<td class='py-1.5 px-2 text-center text-text-muted'>\u2014</td>";
+      html += "<td class='py-1.5 px-2 text-center text-text-muted'>\u2014</td>";
+      html += "</tr>";
+    } else {
+      html += "<tr class='border-b border-[#1F1F1F] bg-[#0A0A0A]/50'>";
+      html += "<td class='py-1.5 px-2 text-text-muted italic whitespace-nowrap' colspan='6'>No manager hired</td>";
+      html += "</tr>";
+    }
 
     for (var ri = 0; ri < sorted.length; ri++) {
       var pl = sorted[ri];

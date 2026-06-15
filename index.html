@@ -3,35 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
   <title>FM24 Tactical Suite</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            mono: ['JetBrains Mono', 'Fira Code', 'Cascadia Code', 'monospace'],
-          },
-          colors: {
-            backdrop: '#000000',
-            surface: '#0A0A0A',
-            'surface-hover': '#1A1A1A',
-            border: '#1F1F1F',
-            'text-primary': '#FFFFFF',
-            'text-secondary': '#CCCCCC',
-            'text-muted': '#666666',
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="dist.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-backdrop text-white font-mono antialiased h-screen overflow-hidden flex flex-col">
+ <body class="bg-backdrop text-white font-mono antialiased h-screen overflow-hidden flex flex-col">
   <!-- Mode Overlay -->
   <div id="mode-overlay">
     <h1>FM24 Tactical Suite</h1>
@@ -41,12 +21,29 @@
     </div>
   </div>
 
+  <!-- Continuity Screen -->
+  <div id="continuity-screen" class="hidden">
+    <div id="continuity-box">
+      <h1>FM24 Tactical Suite</h1>
+      <div id="continuity-mode-label"></div>
+      <div class="continuity-card continuity-new-card" id="continuity-new-card">
+        <div class="new-icon">+</div>
+        <div class="new-label">New Game / Simulation</div>
+        <div class="new-sub">Start fresh with new squad and staff data</div>
+      </div>
+      <div id="continuity-saves-section">
+        <h3>Saved Careers</h3>
+        <div id="continuity-saves-list"></div>
+      </div>
+      <button id="continuity-switch-mode">Change Mode</button>
+    </div>
+  </div>
+
   <!-- DOF Import Overlay -->
   <div id="dof-import-overlay" class="hidden">
     <div id="dof-import-box">
       <h2>DOF Mode &mdash; Import Data</h2>
       <p class="text-xs text-text-muted mb-4">Upload your squad and staff exports to begin. Market is optional.</p>
-
       <div class="import-row" id="import-squad-row">
         <div class="import-label">Squad Export <span class="text-red-400">*</span></div>
         <div class="import-zone" id="import-squad-zone">
@@ -57,7 +54,6 @@
           <div class="import-progress hidden"><div class="import-progress-bar" id="import-squad-progress"></div></div>
         </div>
       </div>
-
       <div class="import-row" id="import-staff-row">
         <div class="import-label">Staff Export <span class="text-red-400">*</span></div>
         <div class="import-zone" id="import-staff-zone">
@@ -68,7 +64,6 @@
           <div class="import-progress hidden"><div class="import-progress-bar" id="import-staff-progress"></div></div>
         </div>
       </div>
-
       <div class="import-row" id="import-market-row">
         <div class="import-label">Market Export</div>
         <div class="import-zone" id="import-market-zone">
@@ -79,7 +74,6 @@
           <div class="import-progress hidden"><div class="import-progress-bar" id="import-market-progress"></div></div>
         </div>
       </div>
-
       <button id="import-continue-btn" class="import-continue-btn" disabled>Continue</button>
     </div>
   </div>
@@ -95,91 +89,216 @@
     </div>
   </div>
 
-  <nav class="flex-none flex border-b border-border bg-surface">
-    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent active-tab" data-tab="tactic" data-mode="all">
-      Tactic Builder <span id="tactic-badge" class="text-text-muted ml-1">0/11</span>
-    </button>
-    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="squad" data-mode="all">
-      Squad Depth
-    </button>
-    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="market" data-mode="all">
-      Market Search
-    </button>
-    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="wonderkid" data-mode="all">
-      Wonderkids <span id="wonderkid-badge" class="text-text-muted ml-1"></span>
-    </button>
-    <button class="tab-btn flex-1 px-4 py-3 text-xs tracking-wider uppercase text-text-muted hover:text-text-secondary transition-colors border-b-2 border-transparent" data-tab="manager" data-mode="dof">
-      Manager <span id="manager-badge" class="text-text-muted ml-1"></span>
-    </button>
-    <div id="nav-mode" class="flex-none flex items-center gap-2 px-3 border-l border-border ml-auto">
-      <span id="mode-label" class="text-xs text-text-muted uppercase tracking-wider">Normal</span>
-      <button id="btn-switch-mode" class="text-xs text-text-muted hover:text-white uppercase tracking-wider transition-colors" title="Switch mode">Switch</button>
-    </div>
-  </nav>
-
-  <!-- Save Bar -->
-  <div id="save-bar" class="hidden">
-    <div class="flex gap-2">
-      <button class="save-btn" id="btn-new-game">New</button>
-      <button class="save-btn" id="btn-save">Save</button>
-      <button class="save-btn" id="btn-load">Load</button>
-    </div>
-    <div class="flex items-center">
-      <span id="save-name-display" class="text-text-muted text-xs">Unsaved</span>
+  <!-- Manager Interview & Negotiation Modal -->
+  <div id="manager-interview-modal" class="hidden">
+    <div id="manager-interview-box">
+      <div id="manager-interview-content"></div>
     </div>
   </div>
 
-  <!-- Load Modal -->
-  <div id="load-modal">
-    <div class="load-modal-box">
-      <h3>Load Save</h3>
-      <div id="load-list"></div>
-      <button id="load-modal-close">Close</button>
+  <!-- ═══ APP SHELL ═══ -->
+  <div id="app-shell" class="hidden">
+
+    <!-- Sidebar -->
+    <aside id="app-sidebar" class="hidden">
+
+      <!-- Brand -->
+      <div class="sidebar-brand">
+        <span class="sidebar-brand-badge">FM24</span>
+        <span class="sidebar-brand-label">Tactical Suite</span>
+      </div>
+
+      <!-- Navigation -->
+      <div class="sidebar-nav">
+
+        <div class="sidebar-nav-group" data-mode="dof" id="sidebar-group-dof">
+          <div class="sidebar-group-label">Director of Football</div>
+          <button class="sidebar-nav-item" data-tab="dashboard" title="Dashboard: board confidence, mandates, and overview (Alt+1)">
+            <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Dashboard</span>
+          </button>
+          <button class="sidebar-nav-item" data-tab="transfers" title="Transfer Activity: incoming bids and outgoing sales (Alt+2)">
+            <i class="ti ti-arrows-exchange" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Transfers</span>
+            <span class="sidebar-item-badge hidden" id="sidebar-transfers-badge">0</span>
+          </button>
+        </div>
+
+        <div class="sidebar-nav-group">
+          <div class="sidebar-group-label">Club</div>
+          <button class="sidebar-nav-item" data-tab="tactic" title="Tactic Builder: formation, roles, and instructions (Alt+3)">
+            <i class="ti ti-chart-dots" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Tactics</span>
+          </button>
+          <button class="sidebar-nav-item" data-tab="squad" title="Squad Depth: player slots, depth chart, and DNA (Alt+4)">
+            <i class="ti ti-users" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Squad</span>
+          </button>
+        </div>
+
+        <div class="sidebar-nav-group">
+          <div class="sidebar-group-label">Recruitment</div>
+          <button class="sidebar-nav-item" data-tab="market" title="Market Search: scout players by tactic fit (Alt+5)">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Market</span>
+          </button>
+          <button class="sidebar-nav-item" data-tab="wonderkid" title="Wonderkid Scout: find young talent (Alt+6)">
+            <i class="ti ti-star" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Wonderkids</span>
+          </button>
+          <button class="sidebar-nav-item" data-tab="manager" title="Manager Market: hire and evaluate head coaches (Alt+7)">
+            <i class="ti ti-briefcase" aria-hidden="true"></i>
+            <span class="sidebar-item-label">Manager Market</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Footer: save controls + mode -->
+      <div class="sidebar-footer">
+        <div class="sidebar-save-state">
+          <div class="sidebar-save-dot" id="sidebar-save-dot"></div>
+          <span class="sidebar-save-name" id="sidebar-save-name">Unsaved</span>
+        </div>
+        <div class="sidebar-save-actions">
+          <button class="sidebar-footer-btn sidebar-footer-btn--primary" id="sidebar-btn-save">Save</button>
+          <button class="sidebar-footer-btn" id="sidebar-btn-load">Load</button>
+          <button class="sidebar-footer-btn" id="sidebar-btn-import">Import</button>
+        </div>
+        <div class="sidebar-mode-chip">
+          <span class="sidebar-mode-label">Mode</span>
+          <span class="sidebar-mode-value" id="sidebar-mode-value">—</span>
+          <button class="sidebar-mode-switch" id="sidebar-btn-switch-mode">Switch</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <main id="app-content">
+      <!-- NEW: Dashboard panel -->
+      <div id="panel-dashboard" class="tab-panel overflow-y-auto">
+        <div id="dashboard-content"></div>
+      </div>
+
+      <!-- NEW: Transfers panel -->
+      <div id="panel-transfers" class="tab-panel overflow-y-auto">
+        <div id="transfers-content"></div>
+      </div>
+
+
+
+      <!-- Import Center Overlay -->
+      <div id="import-center-overlay" class="hidden">
+        <div id="import-center-box">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-bold tracking-wider uppercase text-white">Import Center</h2>
+            <button id="import-center-close" class="text-xs text-text-muted hover:text-white transition-colors">[X]</button>
+          </div>
+          <p class="text-xs text-text-muted mb-4">Upload or replace FM24 data exports.</p>
+          <div id="import-center-zones"></div>
+          <button id="import-center-done-btn" class="import-continue-btn">Done</button>
+        </div>
+      </div>
+
+      <!-- Load Modal -->
+      <div id="load-modal">
+        <div class="load-modal-box">
+          <h3>Load Save</h3>
+          <div id="load-list"></div>
+          <button id="load-modal-close">Close</button>
+        </div>
+      </div>
+
+      <!-- Save Name Modal -->
+      <div id="save-modal" class="fixed inset-0 z-50 bg-backdrop/90 flex items-center justify-center hidden" style="backdrop-filter:blur(2px)">
+        <div class="bg-surface border border-border/80 rounded-xl shadow-2xl w-full max-w-sm p-5 flex flex-col gap-4">
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider">Save As</h3>
+          <input id="save-name-input" type="text" class="w-full text-sm bg-backdrop border border-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder:text-text-muted" placeholder="Enter save name..." autofocus>
+          <div class="flex gap-2 justify-end">
+            <button id="save-modal-cancel" class="px-4 py-1.5 bg-surface-hover hover:bg-border text-white text-xs font-bold uppercase tracking-wider rounded border border-border transition-colors">Cancel</button>
+            <button id="save-modal-confirm" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXISTING panels (unchanged IDs) -->
+      <!-- Tactic Builder -->
+      <div id="panel-tactic" class="tab-panel"> 
+        <div id="tactic-container" class="flex flex-1 min-h-0">
+          <div id="tactic-sidebar"></div>
+          <div id="tactic-main"></div>
+        </div>
+      </div>
+
+      <!-- Squad Depth -->
+      <div id="panel-squad" class="tab-panel p-4 md:p-6 max-w-5xl mx-auto overflow-y-auto">
+        <div id="depth-upload"></div>
+        <div id="depth-content"></div>
+      </div>
+
+      <!-- Market Search -->
+      <div id="panel-market" class="tab-panel p-4 md:p-6 overflow-y-auto">
+        <h2 class="max-w-5xl mx-auto text-sm font-bold tracking-wider uppercase text-white mb-4">Market Search</h2>
+        <div id="market-content">
+          <div id="market-upload" class="max-w-5xl mx-auto"></div>
+          <div id="market-players"></div>
+        </div>
+        <div id="locked-market" class="hidden fixed inset-0 z-10 bg-backdrop/90 flex items-center justify-center flex-col gap-2">
+          <p class="text-text-muted text-sm">Build your tactic first</p>
+          <p class="text-[10px] text-text-muted">Press <kbd class="px-1.5 py-0.5 bg-surface border border-border rounded text-white text-[9px]">Esc</kbd> to go back</p>
+        </div>
+      </div>
+
+      <!-- Wonderkid Scout -->
+      <div id="panel-wonderkid" class="tab-panel p-4 md:p-6 overflow-y-auto">
+        <h2 class="max-w-6xl mx-auto text-sm font-bold tracking-wider uppercase text-white mb-4">Wonderkid Scout</h2>
+        <div id="wonderkid-upload" class="max-w-6xl mx-auto"></div>
+        <div id="wonderkid-content" class="max-w-6xl mx-auto"></div>
+      </div>
+
+      <!-- Manager -->
+      <div id="panel-manager" class="tab-panel p-4 md:p-6 overflow-y-auto">
+        <div id="manager-content"></div>
+      </div>
+
+      <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm" aria-live="polite" aria-atomic="true"></div>
+
+      <!-- Expanded Widget Modal -->
+      <div id="widget-expanded-modal" class="fixed inset-0 z-50 bg-backdrop/90 flex items-center justify-center hidden" style="backdrop-filter:blur(4px)">
+        <div class="bg-surface border border-border/80 rounded-xl max-w-4xl w-full mx-4 overflow-hidden shadow-2xl flex flex-col" style="max-height: 85vh;">
+          <div class="px-5 py-3 border-b border-border/60 flex items-center justify-between bg-backdrop/20 flex-shrink-0">
+            <span id="widget-expanded-title" class="text-xs font-bold text-white uppercase tracking-wider font-mono">Expanded View</span>
+            <button id="widget-expanded-close" class="text-text-muted hover:text-white text-lg font-bold font-mono transition-colors">&times;</button>
+          </div>
+          <div class="p-6 overflow-y-auto flex-1 font-mono text-white text-xs leading-relaxed" id="widget-expanded-body">
+            <!-- Expanded content mounts here -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div><!-- /#app-shell -->
+
+  <!-- Onboarding Wizard Modal -->
+  <div id="onboarding-wizard" class="fixed inset-0 z-[2000] bg-backdrop/90 flex items-center justify-center backdrop-blur-[2px] hidden">
+    <div class="bg-surface border border-border/80 rounded-2xl w-full max-w-xl p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between border-b border-border pb-3 mb-4 flex-none">
+        <h3 class="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></span>
+          DoF Mode Onboarding Wizard
+        </h3>
+        <button id="onboarding-close-btn" class="text-xs text-text-muted hover:text-white transition-colors">[X] Close</button>
+      </div>
+      <div id="onboarding-slides" class="flex-1 overflow-y-auto pr-1 text-xs space-y-4"></div>
+      <div class="flex items-center justify-between border-t border-border pt-4 mt-4 flex-none">
+        <span id="onboarding-progress" class="text-[10px] text-text-muted uppercase font-bold tracking-wider">Step 1 of 5</span>
+        <div class="flex gap-2">
+          <button id="onboarding-prev-btn" class="px-3 py-1.5 bg-surface-hover hover:bg-border text-white text-[10px] uppercase font-bold tracking-wider rounded border border-border transition-colors" disabled>Previous</button>
+          <button id="onboarding-next-btn" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] uppercase font-bold tracking-wider rounded transition-colors">Next</button>
+        </div>
+      </div>
     </div>
   </div>
-
-  <main id="app-content" class="flex-1 overflow-y-auto">
-    <!-- Tactic Builder -->
-    <div id="panel-tactic" class="tab-panel active">
-      <div id="tactic-container" class="flex flex-1 min-h-0">
-        <div id="tactic-sidebar"></div>
-        <div id="tactic-main"></div>
-      </div>
-    </div>
-
-    <!-- Squad Depth -->
-    <div id="panel-squad" class="tab-panel p-4 md:p-6 max-w-5xl mx-auto overflow-y-auto">
-      <h2 class="text-sm font-bold tracking-wider uppercase text-white mb-4">Squad Depth</h2>
-      <div id="depth-upload"></div>
-      <div id="depth-content"></div>
-    </div>
-
-    <!-- Market Search -->
-    <div id="panel-market" class="tab-panel p-4 md:p-6 overflow-y-auto">
-      <h2 class="max-w-5xl mx-auto text-sm font-bold tracking-wider uppercase text-white mb-4">Market Search</h2>
-      <div id="market-content">
-        <div id="market-upload" class="max-w-5xl mx-auto"></div>
-        <div id="market-players"></div>
-      </div>
-      <div id="locked-market" class="hidden fixed inset-0 z-10 bg-backdrop/90 flex items-center justify-center pointer-events-none">
-        <p class="text-text-muted text-sm">Build your tactic first</p>
-      </div>
-    </div>
-
-    <!-- Wonderkid Scout -->
-    <div id="panel-wonderkid" class="tab-panel p-4 md:p-6 overflow-y-auto">
-      <h2 class="max-w-6xl mx-auto text-sm font-bold tracking-wider uppercase text-white mb-4">Wonderkid Scout</h2>
-      <div id="wonderkid-upload" class="max-w-6xl mx-auto"></div>
-      <div id="wonderkid-content" class="max-w-6xl mx-auto"></div>
-    </div>
-
-    <!-- Manager -->
-    <div id="panel-manager" class="tab-panel p-4 md:p-6 overflow-y-auto">
-      <div id="manager-content"></div>
-    </div>
-
-    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
-  </main>
 
   <script src="data/roles.js"></script>
   <script src="data/tactic-schema.js"></script>
@@ -189,7 +308,6 @@
   <script src="modules/tactic.js"></script>
   <script src="modules/market.js"></script>
   <script src="modules/eval.js"></script>
-  <script src="modules/ui.js"></script>
   <script src="data/relationship-pairings.js"></script>
   <script src="data/cb-combos.js"></script>
   <script src="data/midfield-combos.js"></script>
@@ -200,13 +318,26 @@
   <script src="modules/autofixEngine.js"></script>
   <script src="modules/zoneCollisionDetector.js"></script>
   <script src="modules/archetypeScorer.js"></script>
+  <script src="modules/squadDNA.js"></script>
   <script src="modules/globalAggregator.js"></script>
   <script src="modules/tacticValidator.js"></script>
   <script src="modules/wonderkid.js"></script>
   <script src="data/manager-engine.js"></script>
   <script src="modules/managerEval.js"></script>
+  <script src="modules/managerEvolution.js"></script>
+  <script src="modules/playerUtils.js"></script>
+  <script src="modules/boardMandate.js"></script>
+  <script src="modules/transferClubs.js"></script>
+  <script src="modules/incomingBids.js"></script>
   <script src="modules/manager.js"></script>
+  <script src="modules/dashboard.js"></script>
+  <script src="modules/transferWindowV2.js"></script>
+  <script src="vendor/dexie.js"></script>
+  <script src="modules/db.js"></script>
   <script src="modules/save.js"></script>
+  <script src="modules/ui.js"></script>
+  <script src="modules/importCenter.js"></script>
+  <script src="modules/consultation.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

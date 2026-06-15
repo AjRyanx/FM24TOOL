@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --color-backdrop: #000000;
+  --color-surface: #0A0A0A;
+  --color-surface-hover: #1A1A1A;
+  --color-border: #1F1F1F;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #CCCCCC;
+  --color-text-muted: #666666;
+}
+
+@variant dark (&:where(.dark, .dark *));

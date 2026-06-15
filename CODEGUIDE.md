@@ -30,6 +30,7 @@ fm24-tool/
     ├── wonderkid.js     — Wonderkid scout (584 lines)
     ├── managerEval.js   — calculateManagerFit() (471 lines)
     ├── manager.js       — Manager module (1437 lines)
+    ├── managerEvolution.js — Manager evolution engine (436 lines)
     ├── save.js          — Save/load engine (126 lines)
     └── wages.js         — Wage parsing helper
 ```
@@ -80,7 +81,10 @@ window.FM24State = {
     dofImportComplete: false,
     fitScores: {},
     fitScoresReady: false,
-    fitScoresComputing: false
+    fitScoresComputing: false,
+    evolutionHistory: [],
+    lastFitBaseline: {},
+    evolutionLocked: false
   }
 };
 ```
@@ -99,14 +103,15 @@ Script load order in `index.html:184-200`:
 7. `modules/eval.js` → scoring engine
 8. `modules/ui.js` → all rendering
 9. `modules/tacticValidator.js` → evaluateTacticFeasibility()
-10. `modules/wonderkid.js` → wonderkid
-11. `data/midfield-combos.js`
-12. `data/cb-combos.js`
-13. `data/manager-engine.js` → manager philosophy
-14. `modules/managerEval.js` → calculateManagerFit()
-15. `modules/manager.js` → manager UI
-16. `modules/save.js` → save/load
-17. `app.js` → bootstrap
+10. `modules/managerEvolution.js` → manager evolution engine
+11. `modules/wonderkid.js` → wonderkid
+12. `data/midfield-combos.js`
+13. `data/cb-combos.js`
+14. `data/manager-engine.js` → manager philosophy
+15. `modules/managerEval.js` → calculateManagerFit()
+16. `modules/manager.js` → manager UI
+17. `modules/save.js` → save/load
+18. `app.js` → bootstrap
 
 The IIFE in `app.js:379-600`:
 - Calls `initTacticSlots()` to load saved tactics
@@ -335,6 +340,69 @@ Returns: `{overallScore, categories, positives[], warnings[]}`
 
 ---
 
+## Manager Evolution System (`modules/managerEvolution.js`)
+
+### Overview
+Evaluates four pressure signals after transfer windows and squad re-imports.
+If signals exceed thresholds, the manager's tactic, philosophy, or recruitment
+recommendations drift in place. The player is notified via toast. All changes
+are silent (no approval step).
+
+### Key Entry Points
+| Function | Purpose |
+|----------|---------|
+| `computeEvolutionSignal(state, manager, squad)` | Pure evaluation — returns `{changed, drifts, signals}`. Never mutates state (except auto-setting `evolutionLocked` from relationshipIndex). |
+| `applyEvolution(result, state)` | Mutates tactic, philosophy, recommendations. Dispatches `fm24:tactic-imported`, shows toasts, logs to evolutionHistory. Always updates `lastFitBaseline`. |
+| `buildPressureVector(state, manager, squad)` | Returns 4 signals: `squadPressure`, `growthPressure`, `relationshipDamper`, `boardPressure`. |
+| `scoreSquadFitDelta(squad, tactic)` | Average fit score change vs `lastFitBaseline`. |
+| `getEvolutionSummary(manager)` | Human-readable summary of the last evolution event. |
+| `buildNewFitBaseline(squad, tactic)` | Builds `{playerName → fitScore}` map for current assignments. |
+
+### Threshold Constants
+| Constant | Value | Gate |
+|----------|-------|------|
+| `TACTIC_SQUAD` | 35 | Squad pressure to trigger tactic re-eval |
+| `TACTIC_GROWTH` | 40 | Growth pressure to trigger tactic re-eval |
+| `TACTIC_SCORE_GRACE` | 5 | New tactic can score this much lower and still apply |
+| `TACTIC_MIN_SLOT_DIFF` | 3 | Minimum different slots for a tactic drift |
+| `PHILOSOPHY` | 50 | Squad pressure to trigger philosophy drift |
+| `PHILOSOPHY_BOARD` | 65 | Board pressure to force philosophy toward safe archetypes |
+
+### Pressure Signals
+- **Squad pressure**: `(mismatch_signings × 15) + (key_departures × 20)`, capped 100
+- **Growth pressure**: `abs(avgFitDelta) × 4`, capped 100. Negative delta (decline) also generates pressure.
+- **Relationship damper**: Multiplier (0.0–1.3) applied to squad + growth pressure. At relationshipIndex < 30, evolution is **locked**. At > 85, damper = 1.3 (more willing to drift).
+- **Board pressure**: `NORMAL=0` / `SCRUTINY=30` / `PRESSURE=65` / `DISMISSAL_RISK=90`. At ≥ 65, philosophy biased toward conservative archetypes. At ≥ 90, tactic drift is suppressed entirely.
+
+### Philosophy Families
+Cross-family shifts are logged; same-family shifts are ignored:
+`gegenpress` / `counter-press` → `high-intensity`
+`tiki-taka` / `possession` → `possession`
+`route one` / `counter` → `direct`
+`low-block` / `park-the-bus` → `defensive`
+
+### New ManagerState Fields
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `evolutionHistory` | `EvolutionLogEntry[]` | `[]` | Chronological log of every evolution event |
+| `lastFitBaseline` | `{name → number}` | `{}` | Fit scores at last baseline capture |
+| `evolutionLocked` | `boolean` | `false` | Auto-set when relationshipIndex < 30, reset at > 35 |
+
+### Trigger Points
+1. **End of `simulateTransferWindowV2()`** (`transferWindowV2.js:1321`) — after transfer result assembled
+2. **After squad import in `handleStaffUpload()`** (`manager.js:4582`) — with 600ms setTimeout for UI settle
+3. **After `runAnalysis()`** (`manager.js:4735`) — baseline init only, no evolution eval
+
+### Load Order
+managerEvolution.js loads between managerEval.js and manager.js in index.html.
+Dependencies: eval.js, tactic.js, tacticValidator.js, manager-engine.js.
+
+### Test Coverage
+`scratch/test-evolution.js` — 5 test cases (squad pressure, relationship lock,
+board suppression, growth pressure, threshold gate). Run with `node scratch/test-evolution.js`.
+
+---
+
 ## Save/Load (`modules/save.js`)
 
 - Prefix: `fm24_save_{mode}_`
@@ -426,3 +494,39 @@ Returns: `{overallScore, categories, positives[], warnings[]}`
 
 ### `data/manager-engine.js`
 `normalizeAttr`, `isAntiMetaRole`, `isMetaRole`, `resolveMentality`, `resolveFormation`, `getFormationFamily`, `scoreSquadForFormationFamily`, `deriveManagerPhilosophy`, `generateTacticFromManager`
+
+---
+
+## Squad DNA & Philosophy Coherence (`modules/squadDNA.js`)
+
+**Squad DNA Fingerprint** (`computeSquadDNA(squad)` → `SquadDNA`):
+- Averages FM24 attributes into 6 designed axes: Dynamism, Technicity, Physicality, Intelligence, Defensive Solidity, Attacking Threat.
+- Returns relative scores (0–1), a dominant/weakness axis, and a derived profile label.
+- Cached in module-level `_dnaCache`. Invalidate with `invalidateDNACache()`.
+
+**Manager DNA** (`computeManagerDNA(manager)` → `SquadDNA`):
+- Parallel DNA profile for manager using staff attributes (Det, Ada, Amb, Tac Knw, Dis, Mot, Judge A/P, Mgm, Att).
+- Same 6-axis structure; used only for coherence scoring, not badge rendering.
+
+**Philosophy Coherence Score** (`computeCoherenceScore(dna, manager, tactic)` → `CoherenceResult`):
+- Three sub-scores (~33% each):
+  - sub1: manager philosophy vs tactic archetype (affinity table lookup)
+  - sub2: tactic archetype vs squad DNA (requirements + penalties)
+  - sub3: squad DNA vs manager DNA (axis delta average)
+- Returns 0–100 integer, hex colour, one-line verdict, and weak-link identifier.
+
+**Badge Rendering**:
+- `renderDNABadge(dna, size, theme)` → SVG string. Morphing 6-lobe polygon badge. Three sizes: 80/140/200px.
+- `renderCoherenceBadge(result, compact)` → HTML string. compact=true: score+label only; compact=false: full card with verdict and sub-scores.
+- `renderAxisBreakdown(dna)` → HTML mini-bar chart of all 6 axis values.
+
+**Surfaces**:
+- Depth tab: compact badge (80px) + compact coherence (above depth chart)
+- DoF dashboard: full badge (200px) + full coherence card (alongside board confidence)
+- Manager profile: standard badge (140px) + full coherence + axis breakdown bars
+
+**Invalidation**: Call `invalidateDNACache()` wherever `invalidateSquadFitCache()` is called. Both are triggered by `fm24:squad-loaded` and `fm24:tactic-complete` events.
+
+**DNA Axis Colours** (fixed, not theme-variable):
+- Dynamism: `#E8524A` | Technicity: `#4A90D9` | Physicality: `#7B5EA7`
+- Intelligence: `#F5A623` | Defensive: `#2ECC71` | Attacking: `#F39C12`

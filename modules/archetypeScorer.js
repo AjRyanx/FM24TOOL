@@ -140,6 +140,49 @@
             description: pms + " playmakers — counter archetype works best with at most 2." });
         }
       }
+    } else if (archetype === "positional play specialist") {
+      if (instructions && instructions.passingDirectness) {
+        var pdIdx = PASSING_SCALE.indexOf(instructions.passingDirectness);
+        if (pdIdx > 1) {
+          penaltyDetails.push({ id: "L4_POS_SPECIALIST_DIRECT", severity: "WARNING",
+            description: "Passing directness '" + instructions.passingDirectness + "' exceeds 'Much Shorter' — positional play specialist requires extremely/much shorter passing." });
+        }
+      }
+      if (instructions && instructions.defensiveLine && instructions.defensiveLine !== "Higher" && instructions.defensiveLine !== "Much Higher") {
+        penaltyDetails.push({ id: "L4_POS_SPECIALIST_DLINE", severity: "WARNING",
+          description: "Defensive line '" + instructions.defensiveLine + "' is not high enough — positional play specialist requires 'Higher' or 'Much Higher'." });
+      }
+      if (typeof countPlaymakers === "function" && countPlaymakers(slots) < 2) {
+        penaltyDetails.push({ id: "L4_POS_SPECIALIST_PLAYMAKERS", severity: "WARNING",
+          description: "Fewer than 2 playmakers — positional play specialist requires at least 2 playmakers for fluid build-up." });
+      }
+    } else if (archetype === "wide-oriented direct play") {
+      if (typeof countDirectRunners === "function") {
+        var runners = countDirectRunners(slots);
+        if (runners < 1) {
+          penaltyDetails.push({ id: "L4_WIDE_DIRECT_RUNNERS", severity: "WARNING",
+            description: "No direct runners found — wide-oriented direct play requires at least 1 direct runner." });
+        }
+      }
+      if (instructions && instructions.passingDirectness) {
+        var pdIdx = PASSING_SCALE.indexOf(instructions.passingDirectness);
+        if (pdIdx < 4) { // 4 is "More Direct"
+          penaltyDetails.push({ id: "L4_WIDE_DIRECT_PASSING", severity: "WARNING",
+            description: "Passing directness '" + instructions.passingDirectness + "' is too short — wide direct play requires 'More Direct' or longer." });
+        }
+      }
+      var wideRoleCount = 0;
+      Object.keys(slots).forEach(function(sid) {
+        if (!slots[sid] || !slots[sid].roleId) return;
+        var rid = slots[sid].roleId;
+        if (rid.indexOf("Winger_") === 0 || rid.indexOf("WTM_") === 0 || rid.indexOf("FB_") === 0 || rid.indexOf("WB_") === 0 || rid.indexOf("CWB_") === 0) {
+          wideRoleCount++;
+        }
+      });
+      if (wideRoleCount < 2) {
+        penaltyDetails.push({ id: "L4_WIDE_DIRECT_OUTLETS", severity: "WARNING",
+          description: "Only " + wideRoleCount + " wide outlets — wide direct play needs at least 2 wide options (Wingers, Full Backs, Wing Backs, or Wide Target Men)." });
+      }
     }
 
     // ─── Convert penalties to score ───

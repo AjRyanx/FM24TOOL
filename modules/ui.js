@@ -61,9 +61,14 @@ function buildUploadZone(container, label, stateKey, eventName) {
         var pct = Math.round((cur / total) * 100);
         progressBar.querySelector(".import-progress-bar").style.width = pct + "%";
       }).then(function (players) {
+        validateSquadData(players, stateKey);
         window.FM24State[stateKey] = players;
         window.dispatchEvent(new CustomEvent(eventName, { detail: { count: players.length } }));
         showToast("Loaded " + players.length + " players", "success");
+        progressBar.classList.add("hidden");
+        progressBar.querySelector(".import-progress-bar").style.width = "0%";
+      }).catch(function (err) {
+        showToast(err.message || "Failed to parse file", "error");
         progressBar.classList.add("hidden");
         progressBar.querySelector(".import-progress-bar").style.width = "0%";
       });
@@ -162,12 +167,14 @@ function invalidateSquadFitCache() {
       delete market[i]._marketScores;
     }
   }
+  if (typeof invalidateDNACache === 'function') invalidateDNACache();
 }
 
 function renderDepthView() {
   var squad = window.FM24State.squad;
   var uploadC = document.getElementById("depth-upload");
   var contentC = document.getElementById("depth-content");
+  var isDof = window.FM24State.appMode === 'dof';
 
   if (!squad || squad.length === 0) {
     renderDepthUpload();
@@ -178,6 +185,40 @@ function renderDepthView() {
   if (uploadC) uploadC.innerHTML = "";
   if (!contentC) return;
   contentC.innerHTML = "";
+
+  // ── Modern panel header ──
+  var header = document.createElement('div');
+  header.className = 'depth-panel-header';
+  header.innerHTML =
+    '<div class="depth-panel-title">' +
+      '<span class="depth-panel-icon">▦</span>' +
+      '<span>Squad Depth</span>' +
+    '</div>' +
+    (isDof ? '<span class="depth-mode-chip">DOF View</span>' : '<span class="depth-mode-chip depth-mode-chip--normal">Normal</span>');
+  contentC.appendChild(header);
+
+  // Squad DNA & Coherence bar — DOF mode only
+  if (isDof && typeof computeSquadDNA === 'function' && squad.length > 0) {
+    var dna = computeSquadDNA(squad);
+    var tact = window.FM24State.tactic;
+    var mgr = window.FM24State.manager && window.FM24State.manager.hired;
+    var coherenceResult = (mgr && tact && tact.isComplete && typeof computeCoherenceScore === 'function')
+      ? computeCoherenceScore(dna, mgr, tact) : null;
+    var currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+    var dnaBar = document.createElement('div');
+    dnaBar.className = 'dna-depth-bar';
+    dnaBar.innerHTML =
+      '<div class="dna-depth-badge">' +
+        (typeof renderDNABadge === 'function' ? renderDNABadge(dna, 80, currentTheme) : '') +
+        '<div class="dna-depth-profile">' + dna.profile + '</div>' +
+      '</div>' +
+      (coherenceResult ? (
+        '<div class="dna-depth-divider"></div>' +
+        (typeof renderCoherenceBadge === 'function' ? renderCoherenceBadge(coherenceResult, true) : '')
+      ) : '');
+    contentC.appendChild(dnaBar);
+  }
 
   var state = window.FM24State.depthUI;
   var tactic = window.FM24State.tactic;
@@ -201,14 +242,15 @@ function renderDepthView() {
     }
   }
 
-  // Controls bar
+  // ── Controls bar ──
   var ctrls = document.createElement("div");
-  ctrls.className = "flex flex-wrap gap-3 items-center mb-4";
+  ctrls.className = "depth-controls-bar";
 
+  // Search
   var srch = document.createElement("input");
   srch.type = "text";
-  srch.className = "flex-1 min-w-[140px] px-3 py-1.5 text-xs bg-surface border border-border rounded text-white placeholder-text-muted focus:border-white focus:outline-none";
-  srch.placeholder = "Search name or position...";
+  srch.className = "depth-search-input";
+  srch.placeholder = "Search player or position…";
   srch.value = state.search || "";
   srch.addEventListener("input", function () {
     state.search = this.value;
@@ -216,49 +258,61 @@ function renderDepthView() {
   });
   ctrls.appendChild(srch);
 
-  var sRow = document.createElement("div");
-  sRow.className = "flex flex-wrap gap-1";
+  // Position filter — compact select dropdown
+  var strataSelect = document.createElement("select");
+  strataSelect.className = "depth-strata-select";
   STRATA_ORDER.forEach(function (s) {
-    var b = document.createElement("button");
-    var active = s === (state.strata || "All");
-    b.className = "px-2 py-1 text-xs border rounded transition-colors " +
-      (active ? "bg-white text-black border-white" : "bg-transparent text-text-muted border-border hover:text-text-secondary hover:border-text-secondary");
-    b.textContent = s;
-    b.addEventListener("click", function () {
-      state.strata = s;
-      sRow.querySelectorAll("button").forEach(function (x) {
-        x.className = "px-2 py-1 text-xs border rounded bg-transparent text-text-muted border-border hover:text-text-secondary hover:border-text-secondary";
-      });
-      b.className = "px-2 py-1 text-xs border rounded bg-white text-black border-white";
-      _renderDepthChart();
-    });
-    sRow.appendChild(b);
+    var opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s === "All" ? "All Positions" : s;
+    opt.selected = s === (state.strata || "All");
+    strataSelect.appendChild(opt);
   });
-  ctrls.appendChild(sRow);
+  strataSelect.addEventListener("change", function () {
+    state.strata = this.value;
+    _renderDepthChart();
+  });
+  ctrls.appendChild(strataSelect);
 
+  // View toggle
   var viewBtn = document.createElement("button");
-  viewBtn.className = "text-xs px-2.5 py-1 border border-border rounded text-text-secondary hover:text-white hover:border-text-secondary transition-colors ml-2";
+  viewBtn.className = "depth-ctrl-btn" + (state.viewMode === "slots" ? " depth-ctrl-btn--active" : "");
   viewBtn.id = "depth-view-toggle";
-  viewBtn.textContent = state.viewMode === "slots" ? "[Stratified]" : "[Slot Coverage]";
+  viewBtn.title = state.viewMode === "slots" ? "Switch to Stratified view" : "Switch to Slot Coverage view";
+  viewBtn.textContent = state.viewMode === "slots" ? "Stratified" : "Slot Coverage";
   viewBtn.addEventListener("click", function () {
     state.viewMode = state.viewMode === "slots" ? "strata" : "slots";
     renderDepthView();
   });
   ctrls.appendChild(viewBtn);
 
+  // Proven starters toggle — only relevant in DOF mode
+  if (isDof) {
+    var provenBtn = document.createElement("button");
+    provenBtn.className = "depth-ctrl-btn" + (state.provenOnly ? " depth-ctrl-btn--proven" : "");
+    provenBtn.textContent = state.provenOnly ? "Proven" : "All";
+    provenBtn.title = "Toggle proven starters mode — ranks players by fit × minutes weight";
+    provenBtn.addEventListener("click", function () {
+      state.provenOnly = !state.provenOnly;
+      renderDepthView();
+    });
+    ctrls.appendChild(provenBtn);
+  }
+
+  // Player count
   var hiddenPlayers = window.FM24State.depthHidden || [];
   var hiddenNames = {};
   hiddenPlayers.forEach(function (h) { hiddenNames[h.name] = true; });
   var visibleCount = squad.filter(function (p) { return !hiddenNames[p.Name]; }).length;
   var cnt = document.createElement("span");
   cnt.id = "depth-player-count";
-  cnt.className = "text-xs text-text-muted ml-auto";
+  cnt.className = "depth-count-label";
   cnt.textContent = visibleCount + " / " + squad.length + " players";
   ctrls.appendChild(cnt);
 
   if ((window.FM24State.depthHidden || []).length > 0) {
     var resetBtn = document.createElement("button");
-    resetBtn.className = "text-xs text-[#666666] hover:text-white underline ml-2";
+    resetBtn.className = "depth-reset-btn";
     resetBtn.textContent = "Reset hidden";
     resetBtn.addEventListener("click", function () {
       window.FM24State.depthHidden = [];
@@ -444,12 +498,33 @@ function _renderDepthChart() {
       html += '</div>';
 
       // Meta row
+      var isDofMode = window.FM24State.appMode === 'dof';
       html += '<div class="flex items-center gap-3 mt-0.5 text-xs text-text-muted flex-wrap">' +
         '<span>' + (pl.Age || "-") + 'y</span>' +
         '<span>' + escHtml(pl.Nation || pl.Nationality || pl.Nat || "") + '</span>' +
         '<span>' + escHtml(pl.Club || "") + '</span>' +
         '<span>' + escHtml(pl.Position || "") + flankStr + '</span>' +
         (footStr ? '<span>' + footStr + '</span>' : "") +
+        // DOF-only: playing time & performance analytics
+        (isDofMode && typeof PlayerUtils !== "undefined" && PlayerUtils.getMinutesLoad ? (function() {
+          var ml = PlayerUtils.getMinutesLoad(pl);
+          var mlColors = {starter: 'text-emerald-400', rotation: 'text-sky-400', fringe: 'text-amber-400', unused: 'text-gray-500', absent: 'text-red-400'};
+          var mlC = mlColors[ml.tier] || 'text-gray-500';
+          return '<span class="depth-analytics-pill ' + mlC + '">' + ml.tier + ' (' + ml.raw + 'm)</span>';
+        })() : '') +
+        (isDofMode && typeof PlayerUtils !== "undefined" && PlayerUtils.getPerformanceBand ? (function() {
+          var pb = PlayerUtils.getPerformanceBand(pl);
+          var pbColors = {elite: 'text-purple-400', strong: 'text-blue-400', decent: 'text-green-400', marginal: 'text-amber-400', poor: 'text-red-400', 'no-data': 'text-gray-600'};
+          var pbC = pbColors[pb.band] || 'text-gray-500';
+          return pb.band === 'no-data' ? '' : '<span class="depth-analytics-pill ' + pbC + '">' + pb.band + (pl.AvRat != null ? ' ' + pl.AvRat.toFixed(2) : '') + '</span>';
+        })() : '') +
+        (isDofMode && typeof PlayerUtils !== "undefined" && PlayerUtils.getPTDelta ? (function() {
+          var d = PlayerUtils.getPTDelta(pl);
+          if (!d.label || d.direction === 'unknown' || d.direction === 'on-track') return '';
+          var dirColors = {overperforming: 'text-green-400', underperforming: 'text-red-400'};
+          var dC = dirColors[d.direction] || 'text-gray-500';
+          return '<span class="depth-analytics-pill ' + dC + '" title="' + escHtml(d.label) + '">' + escHtml(d.label) + '</span>';
+        })() : '') +
       '</div>';
 
       html += '</div>';
@@ -586,11 +661,20 @@ function buildGlobalDepthAssignments(squad) {
   if (combos.length === 0) return assignments;
 
   // Sort globally by score descending (NaN-safe)
+  // Apply proven starters weight when depthUI.provenOnly is active
+  var depthState = window.FM24State.depthUI || {};
+  var useProvenWeight = depthState.provenOnly && typeof PlayerUtils !== "undefined" && PlayerUtils.getMinutesLoadWeight;
   combos.sort(function (a, b) {
-    if (isNaN(a.score) && isNaN(b.score)) return 0;
-    if (isNaN(b.score)) return -1;
-    if (isNaN(a.score)) return 1;
-    return b.score - a.score;
+    var sa = a.score;
+    var sb = b.score;
+    if (useProvenWeight) {
+      sa *= PlayerUtils.getMinutesLoadWeight(a.player);
+      sb *= PlayerUtils.getMinutesLoadWeight(b.player);
+    }
+    if (isNaN(sa) && isNaN(sb)) return 0;
+    if (isNaN(sb)) return -1;
+    if (isNaN(sa)) return 1;
+    return sb - sa;
   });
 
   // Build player → best combo map (first in sorted order = highest score)
@@ -811,18 +895,38 @@ function _renderSlotCoverage(container) {
         else if (fl.indexOf("L") !== -1) flankStr = " \u25C0";
         else if (fl.indexOf("R") !== -1) flankStr = " \u25B6";
 
+        var isDofSlot = window.FM24State.appMode === 'dof';
         html += '<div class="px-3 py-2 hover:bg-surface-hover cursor-pointer depth-player-row' + (di === 0 ? ' starter-row' : '') + '" data-player-idx="' + squad.indexOf(pl) + '">' +
           '<div class="flex items-center gap-2">' +
             '<span class="text-xs text-text-muted font-mono">' + _renderShortlistCheckbox(pl) + '</span>' +
             '<span class="hide-btn text-xs text-[#666666] hover:text-white cursor-pointer mr-1" data-idx="' + squad.indexOf(pl) + '" data-strata="' + slotDef.strata + '">\u2212</span>' +
             '<span class="text-sm text-white font-bold flex-1 min-w-0 truncate">' + escHtml(pl.Name) + '</span>' +
-            (entry.score !== null ? '<div class="text-right flex-shrink-0">' + _renderASCIIBar(entry.score) + ' ' + _renderFitBadge(entry.fitLabel) + '</div>' : '') +
+            (entry.score !== null ? '<div class="text-right flex-shrink-0">' + (isDofSlot ? _renderASCIIBar(entry.score) : '') + ' ' + _renderFitBadge(entry.fitLabel) + '</div>' : '') +
           '</div>' +
           '<div class="flex items-center gap-3 mt-0.5 text-xs text-text-muted flex-wrap">' +
             '<span>' + (pl.Age || "-") + 'y</span>' +
             '<span>' + escHtml(pl.Nation || pl.Nationality || pl.Nat || "") + '</span>' +
             '<span>' + escHtml(pl.Club || "") + '</span>' +
             '<span>' + escHtml(pl.Position || "") + flankStr + '</span>' +
+            (isDofSlot && typeof PlayerUtils !== "undefined" && PlayerUtils.getMinutesLoad ? (function() {
+              var ml = PlayerUtils.getMinutesLoad(pl);
+              var mlColors = {starter: 'text-emerald-400', rotation: 'text-sky-400', fringe: 'text-amber-400', unused: 'text-gray-500', absent: 'text-red-400'};
+              var mlC = mlColors[ml.tier] || 'text-gray-500';
+              return '<span class="depth-analytics-pill ' + mlC + '">' + ml.tier + ' (' + ml.raw + 'm)</span>';
+            })() : '') +
+            (isDofSlot && typeof PlayerUtils !== "undefined" && PlayerUtils.getPerformanceBand ? (function() {
+              var pb = PlayerUtils.getPerformanceBand(pl);
+              var pbColors = {elite: 'text-purple-400', strong: 'text-blue-400', decent: 'text-green-400', marginal: 'text-amber-400', poor: 'text-red-400', 'no-data': 'text-gray-600'};
+              var pbC = pbColors[pb.band] || 'text-gray-500';
+              return pb.band === 'no-data' ? '' : '<span class="depth-analytics-pill ' + pbC + '">' + pb.band + (pl.AvRat != null ? ' ' + pl.AvRat.toFixed(2) : '') + '</span>';
+            })() : '') +
+            (isDofSlot && typeof PlayerUtils !== "undefined" && PlayerUtils.getPTDelta ? (function() {
+              var d = PlayerUtils.getPTDelta(pl);
+              if (!d.label || d.direction === 'unknown' || d.direction === 'on-track') return '';
+              var dirColors = {overperforming: 'text-green-400', underperforming: 'text-red-400'};
+              var dC = dirColors[d.direction] || 'text-gray-500';
+              return '<span class="depth-analytics-pill ' + dC + '" title="' + escHtml(d.label) + '">' + escHtml(d.label) + '</span>';
+            })() : '') +
             (entry.roleName ? '<span class="text-text-secondary">' + escHtml(entry.roleName + " (" + entry.duty + ")") + '</span>' : '') +
             '<span class="depth-slot-badge cursor-pointer text-[#888888] hover:text-white ml-2 font-mono text-[10px] border border-[#333] rounded px-1.5 py-0.5" data-player-idx="' + squad.indexOf(pl) + '" data-current-slot="' + slotId + '">' + slotId + '</span>' +
           '</div>' +
@@ -2773,19 +2877,56 @@ function _refreshRosterTable() {
   if (!table) return;
   var rightCol = table.parentNode;
   var autoBtn = rightCol.querySelector("#auto-pick-btn");
-  if (autoBtn) autoBtn.remove();
+  if (autoBtn) {
+    var parent = autoBtn.parentNode;
+    if (parent && parent.classList.contains("flex")) {
+      parent.remove();
+    } else {
+      autoBtn.remove();
+    }
+  }
   table.remove();
   rightCol.insertBefore(_makeAutoPickBtn(), rightCol.firstChild);
   rightCol.appendChild(_renderRosterTable());
 }
 
 function _makeAutoPickBtn() {
-  var btn = document.createElement("button");
-  btn.id = "auto-pick-btn";
-  btn.className = "bg-[#111111] hover:bg-[#1A1A1A] text-white text-[10px] uppercase font-bold tracking-wider border border-[#333333] px-4 py-2 mb-4 w-full rounded-sm";
-  btn.textContent = "Auto Pick Squad";
-  btn.addEventListener("click", _handleAutoPick);
-  return btn;
+  var container = document.createElement("div");
+  container.className = "flex gap-2 mb-4 w-full";
+
+  var pickBtn = document.createElement("button");
+  pickBtn.id = "auto-pick-btn";
+  pickBtn.className = "flex-1 bg-[#111111] hover:bg-[#1A1A1A] text-white text-[10px] uppercase font-bold tracking-wider border border-[#333333] py-2 rounded-sm";
+  pickBtn.textContent = "Auto Pick Squad";
+  pickBtn.addEventListener("click", _handleAutoPick);
+  container.appendChild(pickBtn);
+
+  if (window.FM24State && window.FM24State.appMode === "dof") {
+    var styleBtn = document.createElement("button");
+    styleBtn.id = "apply-manager-style-btn";
+    styleBtn.className = "flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] uppercase font-bold tracking-wider border border-blue-600 py-2 rounded-sm transition-colors";
+    styleBtn.textContent = "Apply Manager Style";
+    styleBtn.addEventListener("click", function () {
+      var s = window.FM24State;
+      if (!s.manager || !s.manager.hired) {
+        if (typeof showToast === "function") {
+          showToast("Please hire a manager first.", "error");
+        } else {
+          alert("Please hire a manager first.");
+        }
+        return;
+      }
+      if (typeof applyGeneratedTactic === "function") {
+        applyGeneratedTactic();
+        if (typeof renderTacticView === "function") {
+          renderTacticView();
+        }
+      }
+    });
+    container.appendChild(styleBtn);
+  }
+
+  return container;
 }
 
 function _showPlayerPicker(slotId, anchorEl, filterSlotId) {
@@ -2949,7 +3090,7 @@ function _showPlayerPicker(slotId, anchorEl, filterSlotId) {
   }
 }
 
-function _handleAutoPick() {
+function _handleAutoPick(preserveExisting) {
   var slots = window.FM24State.tactic.slots;
   var slotIds = Object.keys(slots).filter(function(id) {
     return !/^S\d/.test(id);
@@ -2957,6 +3098,26 @@ function _handleAutoPick() {
   var squad = window.FM24State.squad;
   if (!squad || squad.length === 0) return;
   if (!window.FM24State.tactic.isComplete) return;
+
+  var used = {};
+  var filled = {};
+
+  if (preserveExisting === true) {
+    for (var si = 0; si < slotIds.length; si++) {
+      var slotId = slotIds[si];
+      if (slots[slotId] && slots[slotId].playerName) {
+        used[slots[slotId].playerName] = true;
+        filled[slotId] = true;
+      }
+    }
+  } else {
+    // Clear starting lineup
+    for (var si = 0; si < slotIds.length; si++) {
+      if (slots[slotIds[si]]) {
+        slots[slotIds[si]].playerName = null;
+      }
+    }
+  }
 
   // 1. Generate all player × starting-slot combos (global, all-vs-all)
   var combos = [];
@@ -2976,8 +3137,6 @@ function _handleAutoPick() {
   combos.sort(function (a, b) { return b.score - a.score; });
 
   // 3. Greedy assignment — globally best fit first, no duplicates
-  var used = {};
-  var filled = {};
   for (var ci = 0; ci < combos.length; ci++) {
     var c = combos[ci];
     if (used[c.player.Name]) continue;
@@ -3476,6 +3635,7 @@ function updateNavBadge() {
 /* ── RE-RENDER HELPERS (called from events) ── */
 
 function onTacticChanged() {
+  invalidateSquadFitCache();
   renderPitch();
   renderRolePopover();
   renderSummary();
@@ -3797,10 +3957,109 @@ function renderPlayerCard(player) {
     }
     html += "</div>";
 
+    // Playing time stats row (if available)
+    if (typeof PlayerUtils !== "undefined") {
+      var ptParts = [];
+      if (PlayerUtils.getMinutesLoad) {
+        var ml = PlayerUtils.getMinutesLoad(player);
+        var mlColors = {starter: 'text-emerald-400', rotation: 'text-sky-400', fringe: 'text-amber-400', unused: 'text-gray-500', absent: 'text-red-400'};
+        var mlC = mlColors[ml.tier] || 'text-gray-500';
+        ptParts.push("<span class='" + mlC + "'>" + ml.raw + " mins</span>");
+      }
+      if (PlayerUtils.getPerformanceBand && player.AvRat != null) {
+        var pb = PlayerUtils.getPerformanceBand(player);
+        var pbColors = {elite: 'text-purple-400', strong: 'text-blue-400', decent: 'text-green-400', marginal: 'text-amber-400', poor: 'text-red-400', 'no-data': 'text-gray-600'};
+        var pbC = pbColors[pb.band] || 'text-gray-500';
+        ptParts.push("<span class='" + pbC + "'>AvRat " + player.AvRat.toFixed(2) + "</span>");
+      }
+      if (PlayerUtils.getPTDelta) {
+        var d = PlayerUtils.getPTDelta(player);
+        if (d.delta !== 'N/A') {
+          var dirColors = {overperforming: 'text-green-400', underperforming: 'text-red-400', 'on-track': 'text-gray-500', unknown: 'text-gray-600'};
+          var dC = dirColors[d.direction] || 'text-gray-500';
+          ptParts.push("<span class='" + dC + "'>" + escHtml(d.label) + "</span>");
+        }
+      }
+      if (ptParts.length > 0) {
+        html += "<div class='flex flex-wrap gap-2 text-xs mb-3'>" + ptParts.join(" &middot; ") + "</div>";
+      }
+    }
+
     html += "<div class='flex gap-4 text-xs mb-3'>" +
       "<div class='flex items-center gap-1'><span class='text-[#666666]'>\u25CB</span> Left: <span style='color:" + footColor(player.LeftFootScore) + "'>" + FOOT_LABELS[player.LeftFootScore] + "</span></div>" +
       "<div class='flex items-center gap-1'><span class='text-[#666666]'>\u25CF</span> Right: <span style='color:" + footColor(player.RightFootScore) + "'>" + FOOT_LABELS[player.RightFootScore] + "</span></div>" +
     "</div>";
+
+    var state = window.FM24State;
+    if (state.manager && state.manager.hired && state.manager.windowActive && state.manager.windowStage === 'PART_A_COMPLETE') {
+      var isSquad = state.squad && state.squad.some(function(p) { return p.Name === player.Name; });
+      var pending = state.manager.partAResult && state.manager.partAResult.pendingDecisions;
+      if (pending) {
+        if (isSquad) {
+          var saleDec = pending.find(function(d) { return d.player && d.player.Name === player.Name && d.type === 'SALE_PROPOSED'; });
+          if (saleDec) {
+            if (saleDec.dofDecision === 'APPROVE') {
+              html += "<div class='mb-3 p-2 bg-green-500/10 border border-green-500/20 rounded text-xs text-green-400 font-bold font-mono text-center'>Requested for Sale (Approved)</div>";
+            } else {
+              html += "<div class='mb-3 p-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-400 font-bold font-mono text-center'>Override Sale (Blocked - Go to Ledger to Approve)</div>";
+            }
+          } else {
+            var rec = typeof getManagerRecommendation === 'function' ? getManagerRecommendation(player, player.AP || player.Value || 10000000, state.manager.hired, state.market) : null;
+            if (rec) {
+              var isSell = rec.decision === 'SELL';
+              var badgeColor = isSell ? 'text-green-400 border-green-500/20 bg-green-500/10' : 'text-red-400 border-red-500/20 bg-red-500/10';
+              var labelText = isSell ? 'SELL' : 'KEEP';
+              html += "<div class='mb-3 border border-[#1F1F1F] rounded bg-backdrop/40 p-2.5 font-mono'>";
+              html += "  <div class='flex items-center justify-between mb-1.5'>";
+              html += "    <span class='text-[10px] text-[#666666] uppercase font-bold tracking-wider'>Manager Opinion</span>";
+              html += "    <span class='text-[10px] font-extrabold px-1.5 py-0.5 rounded border " + badgeColor + "'>" + labelText + "</span>";
+              html += "  </div>";
+              var reasonText = rec.reasons && rec.reasons.length > 0 ? rec.reasons[0] : 'No comment';
+              html += "  <div class='text-[11px] text-[#CCCCCC] leading-relaxed mb-2'>\"" + escHtml(reasonText) + "\"</div>";
+              if (isSell) {
+                html += "  <button id='modal-request-sell-btn' class='w-full py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded transition-colors font-mono'>Request Transfer Listing (Sell)</button>";
+              } else {
+                html += "  <button id='modal-request-sell-btn' class='w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded transition-colors font-mono'>Force Transfer Listing (Override)</button>";
+              }
+              html += "</div>";
+            } else {
+              html += "<div class='mb-3 text-center'><button id='modal-request-sell-btn' class='w-full py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded transition-colors font-mono'>Request Transfer Listing (Sell)</button></div>";
+            }
+          }
+        } else {
+          var targetDec = pending.find(function(d) { return d.player && d.player.Name === player.Name && d.type === 'TARGET_PROPOSED'; });
+          if (targetDec) {
+            if (targetDec.dofDecision === 'APPROVE') {
+              html += "<div class='mb-3 p-2 bg-green-500/10 border border-green-500/20 rounded text-xs text-green-400 font-bold font-mono text-center'>Requested for Signing (Approved)</div>";
+            } else {
+              html += "<div class='mb-3 p-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-400 font-bold font-mono text-center'>Override Signing (Blocked - Go to Ledger to Approve)</div>";
+            }
+          } else {
+            var rec = typeof getManagerSigningAdvice === 'function' ? getManagerSigningAdvice(player, state.manager.hired) : null;
+            if (rec) {
+              var isSign = rec.decision === 'SIGN';
+              var badgeColor = isSign ? 'text-green-400 border-green-500/20 bg-green-500/10' : 'text-red-400 border-red-500/20 bg-red-500/10';
+              var labelText = isSign ? 'SIGN' : 'AVOID';
+              html += "<div class='mb-3 border border-[#1F1F1F] rounded bg-backdrop/40 p-2.5 font-mono'>";
+              html += "  <div class='flex items-center justify-between mb-1.5'>";
+              html += "    <span class='text-[10px] text-[#666666] uppercase font-bold tracking-wider'>Manager Opinion</span>";
+              html += "    <span class='text-[10px] font-extrabold px-1.5 py-0.5 rounded border " + badgeColor + "'>" + labelText + "</span>";
+              html += "  </div>";
+              var reasonText = rec.reasons && rec.reasons.length > 0 ? rec.reasons[0] : 'No comment';
+              html += "  <div class='text-[11px] text-[#CCCCCC] leading-relaxed mb-2'>\"" + escHtml(reasonText) + "\"</div>";
+              if (isSign) {
+                html += "  <button id='modal-request-sign-btn' class='w-full py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded transition-colors font-mono'>Request Signing (Sign)</button>";
+              } else {
+                html += "  <button id='modal-request-sign-btn' class='w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded transition-colors font-mono'>Force Signing (Override)</button>";
+              }
+              html += "</div>";
+            } else {
+              html += "<div class='mb-3 text-center'><button id='modal-request-sign-btn' class='w-full py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded transition-colors font-mono'>Request Signing (Sign)</button></div>";
+            }
+          }
+        }
+      }
+    }
 
     if (bestResult) {
       html += "<div class='mb-3'>";
@@ -3821,6 +4080,61 @@ function renderPlayerCard(player) {
     html += "</div>";
 
     tabContent.innerHTML = html;
+
+    var reqSellBtn = document.getElementById('modal-request-sell-btn');
+    if (reqSellBtn) {
+      reqSellBtn.addEventListener('click', function() {
+        var manager = state.manager.hired;
+        if (typeof getManagerRecommendation === 'function' && typeof window.FM24AddManualDecision === 'function') {
+          var rec = getManagerRecommendation(player, player.AP || player.Value || 10000000, manager, state.market);
+          var minFee = player.AP || player.Value || 10000000;
+          if (state.manager.partAResult && state.manager.partAResult.mods) {
+            minFee = minFee * state.manager.partAResult.mods.saleFloorMultiplier;
+          }
+          var isOverride = rec && rec.decision !== 'SELL';
+          var baseReason = rec && rec.reasons.length > 0 ? rec.reasons[0] : 'Requested via player card';
+          var finalReason = isOverride
+            ? 'Manual override: User requested sale (Manager advised keeping: ' + baseReason + ')'
+            : 'Manual sale request: ' + baseReason;
+
+          var dec = {
+            type: 'SALE_PROPOSED',
+            player: player,
+            manager: manager,
+            reason: finalReason,
+            financials: { fee: Math.round(minFee), wage: -(player.Wage || 0), budgetRemaining: state.manager.partAResult.ledger.transferBudget },
+            dofDecision: isOverride ? 'BLOCK' : 'APPROVE'
+          };
+          window.FM24AddManualDecision(dec);
+        }
+      });
+    }
+
+    var reqSignBtn = document.getElementById('modal-request-sign-btn');
+    if (reqSignBtn) {
+      reqSignBtn.addEventListener('click', function() {
+        var manager = state.manager.hired;
+        if (typeof getManagerSigningAdvice === 'function' && typeof window.FM24AddManualDecision === 'function') {
+          var rec = getManagerSigningAdvice(player, manager);
+          var isOverride = rec && rec.decision !== 'SIGN';
+          var baseReason = rec && rec.reasons.length > 0 ? rec.reasons[0] : 'Requested via player card';
+          var finalReason = isOverride
+            ? 'Manual override: User requested signing (Manager advised avoiding: ' + baseReason + ')'
+            : 'Manual signing request: ' + baseReason;
+
+          var dec = {
+            type: 'TARGET_PROPOSED',
+            player: player,
+            manager: manager,
+            reason: finalReason,
+            financials: { fee: player.AP || 0, wage: player.Wage || 0, budgetRemaining: state.manager.partAResult.ledger.transferBudget },
+            dofDecision: isOverride ? 'BLOCK' : 'APPROVE',
+            contextGapSlot: (rec && rec.slotId) || ''
+          };
+          window.FM24AddManualDecision(dec);
+        }
+      });
+    }
 
     if (bestResult) {
       var weights = computeTacticWeights(bestResult.roleId, window.FM24State.tactic.instructions);

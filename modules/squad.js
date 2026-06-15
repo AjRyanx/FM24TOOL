@@ -150,7 +150,7 @@ var FM24_ATTRIBUTES = [
 ];
 
 function parseSquadHTML(htmlText, onProgress) {
-  return new Promise(function (resolve) {
+  return new Promise(function (resolve, reject) {
     var doc = new DOMParser().parseFromString(htmlText, "text/html");
     var allRows = doc.querySelectorAll("tr");
     var headers = [];
@@ -182,6 +182,16 @@ function parseSquadHTML(htmlText, onProgress) {
       }
     }
 
+    if (headers.length === 0 || dataRows.length === 0) {
+      reject(new Error('No tabular data found in HTML. Ensure the export contains a table with player rows.'));
+      return;
+    }
+
+    if (headers.indexOf('Name') === -1) {
+      reject(new Error('Missing "Name" column in HTML table. Check that your FM24 export view includes player names.'));
+      return;
+    }
+
     var players = [];
     var CHUNK_SIZE = 50;
     var idx = 0;
@@ -208,6 +218,27 @@ function parseSquadHTML(htmlText, onProgress) {
         player.CA = parseInt(player["Cur Ability"] || player["CA"] || player["Current Ability"] || "-1", 10);
         player.PA = parseInt(player["Pot Ability"] || player["PA"] || player["Potential Ability"] || "-1", 10);
 
+        if (isNaN(player.CA) || player.CA === -1) {
+          if (!isNaN(player.PA) && player.PA !== -1) {
+            // Fallback: estimate CA from PA and Age
+            if (player.Age >= 24) {
+              player.CA = player.PA;
+            } else if (player.Age >= 21) {
+              player.CA = Math.round(player.PA * 0.9);
+            } else if (player.Age >= 18) {
+              player.CA = Math.round(player.PA * 0.8);
+            } else {
+              player.CA = Math.round(player.PA * 0.7);
+            }
+          } else {
+            // Both missing: default to decent values
+            player.CA = 110;
+          }
+        }
+        if (isNaN(player.PA) || player.PA === -1) {
+          player.PA = Math.max(player.CA, 120);
+        }
+
         // Parse AP
         var apResult = parseAP(player.AP);
         player.AP = apResult.AP;
@@ -232,6 +263,17 @@ function parseSquadHTML(htmlText, onProgress) {
             player[attr] = 0;
           }
         });
+
+        // Parse Playing Time fields
+        player.Mins = parseInt((player["Mins"] || "0").replace(/,/g, ''), 10);
+        if (isNaN(player.Mins)) player.Mins = 0;
+
+        player.AvRat = parseFloat(player["Av Rat"] || "");
+        if (isNaN(player.AvRat)) player.AvRat = null;
+        if (player.Mins < 270 && player.AvRat !== null) player.AvRat = null;
+
+        player.AgreedPT = (player["Agreed Playing Time"] || "").trim() || "";
+        player.ActualPT = (player["Actual Playing Time"] || "").trim() || "";
 
         // Parse positions and attach strata/flanks
         var posInfo = parsePositions(player.Position);

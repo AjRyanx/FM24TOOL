@@ -1,0 +1,59 @@
+{
+  "name": "fm24-tactical-suite",
+  "version": "1.0.0",
+  "description": "FM24 Tactical Suite — DOF Mode desktop application",
+  "main": "main.js",
+  "scripts": {
+    "start": "npm run build:css && electron .",
+    "build": "npm run build:css && electron-builder build --win",
+    "build:css": "npx @tailwindcss/cli -i src/tailwind.css -o dist.css",
+    "lint": "node --check app.js modules/*.js data/*.js",
+    "prebuild": "npm run build:css && npm run lint"
+  },
+  "dependencies": {
+    "dexie": "4.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.1",
+    "electron": "33.0.0",
+    "electron-builder": "25.0.0"
+  },
+  "build": {
+    "appId": "com.fm24.tactical-suite",
+    "productName": "FM24 Tactical Suite",
+    "copyright": "Copyright © 2024 Daniel",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": true,
+    "asarIntegrity": true,
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!src/**",
+      "!scratch/**",
+      "!test-*.html",
+      "!test-*.json",
+      "!staff.html",
+      "!squad.html",
+      "!test-generation.html",
+      "!package-lock.json",
+      "!run-test.js",
+      "!CODEGUIDE.md"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "shortcutName": "FM24 Tactical Suite",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "perMachine": false
+    }
+  }
+}
